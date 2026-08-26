@@ -4,6 +4,8 @@
   "description": "Comprehensive, agent-agnostic skill and reference library for developing Telegram Bots with grammY (v1.45.1).",
   "type": "module",
   "scripts": {
+    "update": "./update.sh",
+    "sync": "node update.mjs",
     "install:global": "./install.sh --global",
     "install:global:link": "./install.sh --global --link",
     "install:project": "./install.sh --project",

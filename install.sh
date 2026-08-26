@@ -60,6 +60,7 @@ ${BOLD}OPTIONS:${RESET}
   -f, --force               Force installation even if the agent is not detected on the machine
   -u, --uninstall           Remove grammY skill from target locations
   -s, --status              Check installation status across detected agent environments
+  -U, --update              Pull latest updates from Git and sync all agent symlinks
   -h, --help                Show this help message
 
 ${BOLD}SUPPORTED AGENTS:${RESET}
@@ -116,6 +117,14 @@ while [ $# -gt 0 ]; do
     -s|--status)
       SHOW_STATUS=true
       shift
+      ;;
+    -U|--update|--sync)
+      if [ -f "${SCRIPT_DIR}/update.sh" ]; then
+        exec "${SCRIPT_DIR}/update.sh"
+      else
+        echo -e "${RED}[Error] update.sh not found.${RESET}"
+        exit 1
+      fi
       ;;
     -h|--help)
       show_help
@@ -393,9 +402,10 @@ if [ -z "$SCOPE" ]; then
   echo -e "  ${BOLD}3)${RESET} Both Global and Current Project"
   echo -e "  ${BOLD}4)${RESET} Custom Project Path"
   echo -e "  ${BOLD}5)${RESET} Check Installation Status"
-  echo -e "  ${BOLD}6)${RESET} Uninstall"
+  echo -e "  ${BOLD}6)${RESET} Auto-Update & Sync with Remote"
+  echo -e "  ${BOLD}7)${RESET} Uninstall"
   echo ""
-  read -rp "Enter choice [1-6] (default: 1): " choice
+  read -rp "Enter choice [1-7] (default: 1): " choice
   choice="${choice:-1}"
 
   case "$choice" in
@@ -412,6 +422,12 @@ if [ -z "$SCOPE" ]; then
       exit 0
       ;;
     6)
+      if [ -f "${SCRIPT_DIR}/update.sh" ]; then
+        exec "${SCRIPT_DIR}/update.sh"
+      fi
+      exit 0
+      ;;
+    7)
       UNINSTALL=true
       read -rp "Uninstall from (1) Global, (2) Project, (3) Both? [1-3]: " uchoice
       case "$uchoice" in

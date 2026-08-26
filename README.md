@@ -89,6 +89,32 @@ Installs the skill into a specific project repository:
 
 ---
 
+## 🔄 Auto-Update & Synchronizer
+
+Keep your skill references and agent links up-to-date with a single command:
+
+```bash
+# 1. Quick update via script
+./update.sh
+
+# Or via npm script
+npm run update
+```
+
+### What the Auto-Updater Does:
+1. **Git Pull:** Pulls the latest commits, fixes, and docs from `origin/main`.
+2. **Registry Freshness Check:** Checks npm (`grammy@latest`) and JSR (`@grammyjs/grammy`) for newly released versions.
+3. **Agent Symlink Repair:** Automatically verifies and repairs symlinks for all detected AI coding agents (`.gemini`, `.pi`, `.claude`, `.cursor`, `.windsurf`, `.roo`, `.cline`, `.agents`).
+
+### Automated Background Cron (Optional)
+To run auto-updates automatically every day in the background:
+```bash
+# Add a daily cron job (runs every day at 04:00)
+(crontab -l 2>/dev/null; echo "0 4 * * * cd $(pwd) && ./update.sh >/dev/null 2>&1") | crontab -
+```
+
+---
+
 ## 🗺️ Agent Directory Locations
 
 | Agent Platform | Global Location | Project Location |
