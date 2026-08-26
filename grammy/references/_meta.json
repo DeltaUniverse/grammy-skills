@@ -22,6 +22,8 @@
     "https://grammy.dev/hosting/cloudflare-workers",
     "https://grammy.dev/plugins/parse-mode",
     "https://grammy.dev/plugins/format",
+    "https://grammy.dev/ref/core/context#editephemeralmessagetext",
+    "https://grammy.dev/ref/core/api#editephemeralmessagetext",
     "https://grammy.dev/hosting/fly",
     "https://grammy.dev/hosting/vercel",
     "https://v2.grammy.dev",
