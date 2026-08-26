@@ -222,6 +222,30 @@ await bot.api.sendMessage(chatId, "Direct notification", {
 });
 ```
 
+### Ephemeral Messages Architecture
+
+Ephemeral messages are temporary messages visible only to a specific target user and the bot (e.g. during Mini App interactions or user-specific group prompts).
+
+- **Creation:** Telegram does not provide a standalone `sendEphemeralMessage` method; ephemeral messages are created via interactive flows, Mini App parameters, or `ephemeral_message_parameters`.
+- **Identification:** Stored on `Message` objects under `message.ephemeral_message_id`.
+- **Replying:** Pass `ephemeral_message_id` inside `ReplyParameters` (`reply_parameters: { ephemeral_message_id: ... }`).
+- **Editing & Deletion:** Telegram provides dedicated API methods to manipulate ephemeral messages:
+
+```typescript
+// 1. Edit ephemeral message text
+await ctx.api.editEphemeralMessageText(chatId, ephemeralMessageId, "<b>Updated private notice</b>", {
+  parse_mode: "HTML",
+});
+
+// 2. Edit ephemeral message inline keyboard
+await ctx.api.editEphemeralMessageReplyMarkup(chatId, ephemeralMessageId, {
+  reply_markup: new InlineKeyboard().text("Done", "done"),
+});
+
+// 3. Delete ephemeral message
+await ctx.api.deleteEphemeralMessage(chatId, ephemeralMessageId);
+```
+
 ---
 
 ## 7. File Handling with `InputFile`
