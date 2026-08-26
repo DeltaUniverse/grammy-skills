@@ -18,7 +18,7 @@ Compatible with all leading AI coding assistants:
 - **[`grammy/SKILL.md`](grammy/SKILL.md)**: Main skill file with Freshness Protocol, Lazy Senior Principles, Context Typing, Decision Tree, and Reference Map.
 - **[`grammy/references/`](grammy/references/)**: 100% factual reference files derived directly from official documentation:
   - [`core.md`](grammy/references/core.md) — Bot class, context flavors, filter queries, message sending, and file uploads.
-  - [`rich-messages.md`](grammy/references/rich-messages.md) — Native rich messages (`replyWithRichMessage`, `replyWithRichMessageDraft`), tables, LaTeX math, HTML formatting, inline keyboards, and modular composers.
+  - [`rich-messages.md`](grammy/references/rich-messages.md) — HTML formatting, `@grammyjs/format`, `@grammyjs/parse-mode`, ASCII monospace tables, AI streaming via `editMessageText`, and inline keyboards.
   - [`sessions.md`](grammy/references/sessions.md) — Built-in sessions, multi-sessions, storage adapters (SQLite, Redis, Supabase, Free), lazy sessions, and TTL enhancement.
   - [`conversations.md`](grammy/references/conversations.md) — Async multi-step dialogs, Replay Engine rules, determinism, and form builders.
   - [`keyboards.md`](grammy/references/keyboards.md) — Inline keyboards, custom reply keyboards, callback queries, and the Menu plugin.

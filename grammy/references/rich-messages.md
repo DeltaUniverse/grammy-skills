@@ -1,226 +1,73 @@
-# grammY Rich Messages, Native Markdown & Keyboards Reference
+# grammY Rich Formatting, Tables, Keyboards & Streaming Reference
 
-> **Verified Version:** grammY `v1.45.1`  
-> **Source:** `https://grammy.dev/ref/core/context#replywithrichmessage`, `https://grammy.dev/ref/core/context#replywithrichmessagedraft`, `https://grammy.dev/ref/core/api#sendrichmessage`, `https://grammy.dev/ref/core/api#sendrichmessagedraft`, `https://grammy.dev/guide/basics`, `https://grammy.dev/plugins/keyboard`
+> **Verified Version:** grammY `v1.45.1` (with grammY 2.0 Roadmap)  
+> **Source:** `https://grammy.dev/guide/basics`, `https://grammy.dev/plugins/keyboard`, `https://grammy.dev/plugins/parse-mode`, `https://grammy.dev/plugins/format`
 
 ---
 
 ## Table of Contents
-- [1. Architectural Overview & Comparison](#1-architectural-overview--comparison)
-- [2. Native Rich Messages (`replyWithRichMessage` / `sendRichMessage`)](#2-native-rich-messages-replywithrichmessage--sendrichmessage)
-  - [Method Signature & Context Shortcuts](#method-signature--context-shortcuts)
-  - [Supported Options & Parameters](#supported-options--parameters)
-  - [Supported Markdown Syntax (Tables, LaTeX Math, Expandables)](#supported-markdown-syntax-tables-latex-math-expandables)
-  - [Media Permission Requirements](#media-permission-requirements)
-- [3. Streaming Ephemeral Drafts (`replyWithRichMessageDraft` / `sendRichMessageDraft`)](#3-streaming-ephemeral-drafts-replywithrichmessagedraft--sendrichmessagedraft)
-  - [Ephemeral 30-Second Preview Window](#ephemeral-30-second-preview-window)
-  - [Stream-to-Persist Lifecycle Pattern](#stream-to-persist-lifecycle-pattern)
-  - [Throttling Best Practices](#throttling-best-practices)
-- [4. Standard HTML Formatting & Parse Modes](#4-standard-html-formatting--parse-modes)
+- [1. Message Formatting in Telegram & grammY](#1-message-formatting-in-telegram--grammy)
+- [2. HTML Parse Mode (`parse_mode: "HTML"`)](#2-html-parse-mode-parse_mode-html)
   - [Supported HTML Tags](#supported-html-tags)
-  - [HTML Entity Escaping](#html-entity-escaping)
+  - [Safe HTML Escaping Utility](#safe-html-escaping-utility)
   - [Link Preview Control (`link_preview_options`)](#link-preview-control-link_preview_options)
-- [5. Inline Keyboards (`InlineKeyboard`) & Callbacks](#5-inline-keyboards-inlinekeyboard--callbacks)
-  - [Button Types & Layouts](#button-types--layouts)
-  - [Clearing Loading Spinners with `answerCallbackQuery`](#clearing-loading-spinners-with-answercallbackquery)
-- [6. Production Implementation Recipes](#6-production-implementation-recipes)
-  - [Recipe A: AI Token Streaming with Rich Drafts & Final Persistence](#recipe-a-ai-token-streaming-with-rich-drafts--final-persistence)
-  - [Recipe B: Real-Time Server Dashboard with Native Tables & Refresh Button](#recipe-b-real-time-server-dashboard-with-native-tables--refresh-button)
-  - [Recipe C: Dynamic `/rich` Command Handler with Safe Error Boundaries](#recipe-c-dynamic-rich-command-handler-with-safe-error-boundaries)
-  - [Recipe D: Monospace Fallback for Standard `sendMessage`](#recipe-d-monospace-fallback-for-standard-sendmessage)
+- [3. Type-Safe Formatting Plugins](#3-type-safe-formatting-plugins)
+  - [`@grammyjs/format` (JSX-like Builder)](#grammyjsformat-jsx-like-builder)
+  - [`@grammyjs/parse-mode` (Hydrated Reply Shortcuts)](#grammyjsparse-mode-hydrated-reply-shortcuts)
+- [4. Rendering Markdown Tables & Dashboards in Telegram](#4-rendering-markdown-tables--dashboards-in-telegram)
+  - [A. Monospace ASCII `<pre>` Code Block (Recommended)](#a-monospace-ascii-pre-code-block-recommended)
+  - [B. Clean Key-Value Card Layout](#b-clean-key-value-card-layout)
+- [5. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle](#5-inline-keyboards-inlinekeyboard--callback-lifecycle)
+  - [Button Types & Grid Layout](#button-types--grid-layout)
+  - [Dismissing Loading Spinners with `answerCallbackQuery`](#dismissing-loading-spinners-with-answercallbackquery)
+- [6. Live Streaming & Ephemeral Progress (The Real Way)](#6-live-streaming--ephemeral-progress-the-real-way)
+  - [Chat Action Typing Indicator](#chat-action-typing-indicator)
+  - [AI / LLM Token Streaming via Throttled `editMessageText`](#ai--llm-token-streaming-via-throttled-editmessagetext)
+- [7. Production Implementation Recipes](#7-production-implementation-recipes)
+  - [Recipe A: Interactive Infrastructure Dashboard Card](#recipe-a-interactive-infrastructure-dashboard-card)
+  - [Recipe B: AI Streaming Response Handler](#recipe-b-ai-streaming-response-handler)
+  - [Recipe C: Dynamic Formatted Message with Custom Keyboard](#recipe-c-dynamic-formatted-message-with-custom-keyboard)
 
 ---
 
-## 1. Architectural Overview & Comparison
+## 1. Message Formatting in Telegram & grammY
 
-Telegram and grammY provide two distinct methods for sending structured text to users:
+Telegram Bot API relies on `sendMessage` (exposed via `ctx.reply()` in 1.x and `ctx.send()` in 2.0). All visual richness—including bold headers, monospace code snippets, expandable quotes, spoilers, and custom emojis—is controlled via parse modes (`parse_mode`) or message entities.
 
-| Feature | Classic `reply` (`sendMessage`) | Native `replyWithRichMessage` (`sendRichMessage`) | Streaming `replyWithRichMessageDraft` (`sendRichMessageDraft`) |
+### Comparison of Formatting Options
+
+| Strategy | Advantages | Caveats | Best Use Case |
 | :--- | :--- | :--- | :--- |
-| **Primary Method** | `ctx.reply(text, options)` | `ctx.replyWithRichMessage(options)` | `ctx.replyWithRichMessageDraft(options)` |
-| **API Direct Method** | `ctx.api.sendMessage(chat_id, text, opts)` | `ctx.api.sendRichMessage(chat_id, opts)` | `ctx.api.sendRichMessageDraft(chat_id, opts)` |
-| **Max Character Limit**| 4,096 characters | **32,768 characters** | **32,768 characters** |
-| **Markdown Tables (`\|---\|`)** | ❌ Monospace `<pre>` required | ✅ **Native visual table rendering** | ✅ **Native visual table rendering** |
-| **Mathematical Formulas (LaTeX)** | ❌ Plain text only | ✅ **Native LaTeX `$..$` & `$$..$$`** | ✅ **Native LaTeX `$..$` & `$$..$$`** |
-| **Persistence** | Permanent message in chat | Permanent message in chat | **Ephemeral (30s preview only)** |
-| **Primary Use Case** | Basic notifications & text replies | Dashboards, rich reports, math, tables | Real-time AI / LLM token streaming |
+| **`parse_mode: "HTML"`** | Clean, intuitive, highly reliable | Requires escaping `<`, `>`, `&` in dynamic text | **Default recommendation for 95% of bots** |
+| **`@grammyjs/format`** | 100% type-safe, zero manual escaping | Extra dependency | Dynamic templating and complex structured texts |
+| **`@grammyjs/parse-mode`** | Adds `ctx.replyWithHTML`, `ctx.replyWithMarkdown` | Plugin setup required | Convenience shortcuts |
+| **`parse_mode: "MarkdownV2"`** | Standard markdown syntax | Fragile; requires escaping 18 special characters | Static templates only |
 
 ---
 
-## 2. Native Rich Messages (`replyWithRichMessage` / `sendRichMessage`)
+## 2. HTML Parse Mode (`parse_mode: "HTML"`)
 
-`replyWithRichMessage` is a context-aware shortcut installed on `Context` for `ctx.api.sendRichMessage`. It automatically injects the current chat ID (`ctx.chat.id`).
-
-### Method Signature & Context Shortcuts
-
-```typescript
-// grammY 1.x Context shortcut:
-await ctx.replyWithRichMessage(other?: Other<"sendRichMessage", "chat_id">, signal?: AbortSignal): Promise<Message>;
-
-// grammY 2.0 Context shortcut:
-await ctx.sendRichMessage(other?: Other<"sendRichMessage", "chat_id">, signal?: AbortSignal): Promise<Message>;
-
-// Direct API call (both 1.x and 2.0 via bot.api or ctx.api):
-await bot.api.sendRichMessage(chat_id: number | string, other: Other<"sendRichMessage", "chat_id">, signal?: AbortSignal): Promise<Message>;
-```
-
-### Supported Options & Parameters
-
-The options object passed to `replyWithRichMessage` supports:
-
-```typescript
-interface SendRichMessageOptions {
-  /** The unescaped raw Markdown text formatted with rich features */
-  markdown: string;
-  
-  /** Attached inline keyboard or reply markup */
-  reply_markup?: InlineKeyboard | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply;
-  
-  /** Quoting / replying to existing messages */
-  reply_parameters?: {
-    message_id: number;
-    chat_id?: number | string;
-    allow_sending_without_reply?: boolean;
-    quote?: string;
-    quote_parse_mode?: string;
-  };
-  
-  /** Forum topic thread ID */
-  message_thread_id?: number;
-  
-  /** Send silently without notification sound */
-  disable_notification?: boolean;
-  
-  /** Protect message from forwarding and saving */
-  protect_content?: boolean;
-  
-  /** Telegram Business connection ID */
-  business_connection_id?: string;
-}
-```
-
-### Supported Markdown Syntax (Tables, LaTeX Math, Expandables)
-
-Unlike legacy `parse_mode: "MarkdownV2"` which requires meticulous backslash escaping for all punctuation, `replyWithRichMessage` accepts standard Markdown directly:
-
-#### 1. Markdown Tables
-```markdown
-| Service | Status | Latency |
-|:---|:---:|---:|
-| API Gateway | 🟢 Up | 12ms |
-| PostgreSQL | 🟢 Up | 2ms |
-| Redis Cache | 🟡 Warm | 18ms |
-```
-
-#### 2. Mathematical Equations (LaTeX)
-- **Inline formula:** `$E = mc^2$` or `$\sigma = \sqrt{\frac{1}{N}\sum_{i=1}^N (x_i - \mu)^2}$`
-- **Block formula:**
-  ```latex
-  $$
-  f(x) = \int_{-\infty}^{\infty} \hat{f}(\xi)\,e^{2 \pi i \xi x}\,d\xi
-  $$
-  ```
-
-#### 3. Expandable Blockquotes & Collapsible Sections
-```markdown
-**> Collapsible Changelog**
-> - Feature 1: Added native rich message support
-> - Feature 2: Added ephemeral draft streaming
-> - Fix: Resolved markdown table rendering issues
-```
-
-#### 4. Spoilers, Strikethrough, Code Blocks
-```markdown
-||Secret spoiler text||
-~~Strikethrough text~~
-```ts
-const greeting = "Hello, world!";
-```
-```
-
-### Media Permission Requirements
-
-> [!IMPORTANT]
-> If a rich message contains a block with an embedded media element, the bot **must have permission** to send that specific media type (photos, documents, etc.) in the destination chat or group.
-
----
-
-## 3. Streaming Ephemeral Drafts (`replyWithRichMessageDraft` / `sendRichMessageDraft`)
-
-`replyWithRichMessageDraft` is a context-aware shortcut for `api.sendRichMessageDraft`.
-
-### Ephemeral 30-Second Preview Window
-
-- **Drafts are NOT saved permanently:** Draft messages act as a temporary 30-second live preview in the Telegram client.
-- If the bot stops updating the draft and never calls `replyWithRichMessage`, the draft vanishes after its expiration window.
-- **Persistence Rule:** Once streaming finishes, you **must call `replyWithRichMessage`** to save the final message permanently in the user's chat.
-
-### Stream-to-Persist Lifecycle Pattern
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant Bot
-    participant AI as LLM Stream
-    participant Telegram as Telegram Server
-
-    User->>Bot: /ask "Generate quarterly report"
-    Bot->>Telegram: ctx.replyWithChatAction("typing")
-    Bot->>AI: requestStream(...)
-    loop Every ~400ms (throttled tokens)
-        AI-->>Bot: chunk data
-        Bot->>Telegram: ctx.replyWithRichMessageDraft({ markdown: buffer })
-        Telegram-->>User: Live Ephemeral Draft Preview
-    end
-    AI-->>Bot: stream finished
-    Bot->>Telegram: ctx.replyWithRichMessage({ markdown: finalContent, reply_markup })
-    Telegram-->>User: Final Persisted Rich Message
-```
-
-### Throttling Best Practices
-
-Do NOT send a draft call for every single token received from an AI model. Telegram rate limits draft updates. Throttle draft calls to every **300ms–500ms**:
-
-```typescript
-let lastDraftTime = 0;
-const DRAFT_INTERVAL_MS = 400;
-
-async function onTokenChunk(chunk: string, currentBuffer: string, ctx: MyContext) {
-  const now = Date.now();
-  if (now - lastDraftTime > DRAFT_INTERVAL_MS) {
-    lastDraftTime = now;
-    await ctx.replyWithRichMessageDraft({
-      markdown: currentBuffer,
-    });
-  }
-}
-```
-
----
-
-## 4. Standard HTML Formatting & Parse Modes
-
-When not using `replyWithRichMessage`, the standard `ctx.reply` with `parse_mode: "HTML"` remains the recommended approach for standard formatted messages under 4,096 characters.
+HTML is the official gold standard for stable Telegram bots.
 
 ### Supported HTML Tags
 
 | Tag | Purpose | Example |
 | :--- | :--- | :--- |
-| `<b>`, `<strong>` | Bold header or emphasized text | `<b>Important Update</b>` |
-| `<i>`, `<em>` | Italicized subtitle or caption | `<i>Generated at 10:00 UTC</i>` |
-| `<u>`, `<ins>` | Underlined text | `<u>Underlined Notice</u>` |
-| `<s>`, `<strike>`, `<del>` | Strikethrough | `<s>Old price: $50</s>` |
-| `<tg-spoiler>` | Concealed spoiler content | `<tg-spoiler>Secret code: 4829</tg-spoiler>` |
+| `<b>`, `<strong>` | Bold header or emphasized text | `<b>System Status</b>` |
+| `<i>`, `<em>` | Italicized subtitle or caption | `<i>Updated 2 mins ago</i>` |
+| `<u>`, `<ins>` | Underlined text | `<u>Attention</u>` |
+| `<s>`, `<strike>`, `<del>` | Strikethrough text | `<s>Original: $100</s>` |
+| `<tg-spoiler>` | Concealed spoiler content | `<tg-spoiler>Secret OTP: 1234</tg-spoiler>` |
 | `<a href="...">` | Embedded inline hyperlink | `<a href="https://grammy.dev">grammY Docs</a>` |
-| `<code>` | Monospace code snippet | `<code>const token = "..."</code>` |
-| `<pre>` | Multi-line code block | `<pre><code class="language-typescript">console.log("hi");</code></pre>` |
-| `<blockquote>` | Quoted text block | `<blockquote>Quoted block</blockquote>` |
-| `<blockquote expandable>` | Collapsible / expandable quote | `<blockquote expandable>Long changelog...</blockquote>` |
+| `<code>` | Monospace inline snippet | `<code>npm install grammy</code>` |
+| `<pre>` | Multi-line code block | `<pre><code class="language-typescript">const x = 1;</code></pre>` |
+| `<blockquote>` | Quoted message block | `<blockquote>Quoted note</blockquote>` |
+| `<blockquote expandable>` | Collapsible / expandable blockquote | `<blockquote expandable>Long changelog...</blockquote>` |
+| `<tg-emoji emoji-id="...">` | Custom animated Telegram emoji | `<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>` |
 
-### HTML Entity Escaping
+### Safe HTML Escaping Utility
 
-Always escape dynamic or user-generated text when using HTML mode:
+When interpolating dynamic user input or database results into HTML templates, always escape special characters:
 
 ```typescript
 export function escapeHtml(text: string): string {
@@ -229,16 +76,20 @@ export function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+// Usage:
+const safeUser = escapeHtml(ctx.from?.first_name ?? "User");
+await ctx.reply(`Hello, <b>${safeUser}</b>!`, { parse_mode: "HTML" });
 ```
 
 ### Link Preview Control (`link_preview_options`)
 
 ```typescript
-await ctx.reply(`Check our guide: <a href="https://grammy.dev">grammY Documentation</a>`, {
+await ctx.reply(`Check our guide: <a href="https://grammy.dev">grammY Docs</a>`, {
   parse_mode: "HTML",
   link_preview_options: {
-    is_disabled: false,        // false = show preview, true = hide preview
-    prefer_small_media: true,  // Compact thumbnail preview
+    is_disabled: false,        // false = show preview; true = disable completely
+    prefer_small_media: true,  // Display compact thumbnail banner
     show_above_text: false,    // Preview below text
   },
 });
@@ -246,216 +97,61 @@ await ctx.reply(`Check our guide: <a href="https://grammy.dev">grammY Documentat
 
 ---
 
-## 5. Inline Keyboards (`InlineKeyboard`) & Callbacks
+## 3. Type-Safe Formatting Plugins
 
-### Button Types & Layouts
+### `@grammyjs/format` (JSX-like Builder)
 
-`InlineKeyboard` can be directly attached to both `ctx.replyWithRichMessage({ reply_markup })` and `ctx.reply(text, { reply_markup })`:
+`@grammyjs/format` eliminates escaping errors completely by constructing `entities` programmatically:
 
 ```typescript
-import { InlineKeyboard } from "grammy";
+import { fmt, bold, italic, code, link, spoiler } from "@grammyjs/format";
 
-const keyboard = new InlineKeyboard()
-  // URL Button: Opens link
-  .url("📖 Documentation", "https://grammy.dev")
-  // Callback Button: Triggers bot listener
-  .text("🔄 Refresh Data", "stats:refresh")
-  .row()
-  // Mini App Button
-  .webApp("🚀 Launch App", "https://app.example.com")
-  // Clipboard Copy Button
-  .copyText("📋 Copy Token", "AUTH_KEY_9921");
+bot.command("info", async (ctx) => {
+  const text = fmt`
+${bold("User Profile")}
+• Name: ${ctx.from?.first_name}
+• ID: ${code(ctx.from?.id.toString())}
+• Status: ${italic("Active")}
+• Secret: ${spoiler("VIP-2026")}
+
+Read more at ${link("Official Guide", "https://grammy.dev")}`;
+
+  await ctx.reply(text);
+});
 ```
 
-### Clearing Loading Spinners with `answerCallbackQuery`
+### `@grammyjs/parse-mode` (Hydrated Reply Shortcuts)
 
-> [!IMPORTANT]
-> Always call `await ctx.answerCallbackQuery()` inside `bot.callbackQuery` or `composer.callbackQuery` handlers immediately to dismiss the user's client loading indicator.
+Adds convenient methods like `ctx.replyWithHTML` to `Context`:
 
 ```typescript
-composer.callbackQuery("stats:refresh", async (ctx) => {
-  await ctx.answerCallbackQuery({
-    text: "Statistics refreshed!",
-    show_alert: false, // true = modal popup; false = toast banner
-  });
+import { hydrateReply, parseMode } from "@grammyjs/parse-mode";
+import type { ParseModeFlavor } from "@grammyjs/parse-mode";
 
-  // Re-generate stats and update
-  const newMarkdown = generateStatsMarkdown();
-  await ctx.replyWithRichMessage({
-    markdown: newMarkdown,
-    reply_markup: createStatsKeyboard(),
-  });
+type MyContext = ParseModeFlavor<Context>;
+const bot = new Bot<MyContext>("BOT_TOKEN");
+
+// 1. Install transformer to set default parse mode
+bot.api.config.use(parseMode("HTML"));
+
+// 2. Install context hydration
+bot.use(hydrateReply);
+
+bot.command("start", async (ctx) => {
+  // Directly sends with HTML parse mode
+  await ctx.replyWithHTML("<b>Welcome</b> to our bot!");
 });
 ```
 
 ---
 
-## 6. Production Implementation Recipes
+## 4. Rendering Markdown Tables & Dashboards in Telegram
 
-### Recipe A: AI Token Streaming with Rich Drafts & Final Persistence
+Because Telegram Bot API does not render GUI markdown tables natively, production bots use two proven layout techniques:
 
-```typescript
-import { Composer, Context, InlineKeyboard } from "grammy";
+### A. Monospace ASCII `<pre>` Code Block (Recommended)
 
-export type MyContext = Context;
-export const aiFeature = new Composer<MyContext>();
-
-aiFeature.command("ask", async (ctx) => {
-  const prompt = ctx.match;
-  if (!prompt) {
-    return ctx.reply("Please provide a prompt. Example: <code>/ask explain quantum computing</code>", {
-      parse_mode: "HTML",
-    });
-  }
-
-  // 1. Initial chat action
-  await ctx.replyWithChatAction("typing");
-
-  let accumulatedMarkdown = "";
-  let lastDraftTimestamp = 0;
-  const DRAFT_THROTTLE_MS = 400;
-
-  try {
-    // 2. Stream tokens from AI model (mock stream example)
-    const stream = fakeAiStream(prompt);
-
-    for await (const token of stream) {
-      accumulatedMarkdown += token;
-      const now = Date.now();
-
-      // 3. Stream ephemeral draft preview
-      if (now - lastDraftTimestamp > DRAFT_THROTTLE_MS) {
-        lastDraftTimestamp = now;
-        await ctx.replyWithRichMessageDraft({
-          markdown: accumulatedMarkdown,
-        });
-      }
-    }
-
-    // 4. Finalize and persist permanent rich message
-    const actionKeyboard = new InlineKeyboard()
-      .text("👍 Helpful", "ai:vote_up")
-      .text("👎 Not Helpful", "ai:vote_down");
-
-    await ctx.replyWithRichMessage({
-      markdown: accumulatedMarkdown,
-      reply_markup: actionKeyboard,
-    });
-  } catch (error) {
-    console.error("AI stream error:", error);
-    await ctx.reply("An error occurred while generating the response.", {
-      parse_mode: "HTML",
-    });
-  }
-});
-
-// Mock generator for testing
-async function* fakeAiStream(prompt: string) {
-  const words = `### Response to: "${prompt}"\n\n| Step | Details |\n|---|---|\n| 1 | Query analyzed |\n| 2 | Solution synthesized |\n\nFormula: $$\\lim_{x \\to \\infty} \\frac{1}{x} = 0$$\n\nDone!`.split(" ");
-  for (const word of words) {
-    await new Promise((r) => setTimeout(r, 60));
-    yield word + " ";
-  }
-}
-```
-
-### Recipe B: Real-Time Server Dashboard with Native Tables & Refresh Button
-
-```typescript
-import { Composer, Context, InlineKeyboard } from "grammy";
-
-export type MyContext = Context;
-export const dashboardFeature = new Composer<MyContext>();
-
-function getDashboardMarkdown(): string {
-  const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-  const uptime = process.uptime().toFixed(0);
-  const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
-
-  return `# 🖥️ Server Infrastructure Dashboard
-
-## System Status
-| Component | Status | Latency | Uptime |
-|:---|:---:|---:|---:|
-| Webhook Gateway | 🟢 Online | 8ms | ${uptime}s |
-| Redis Cache | 🟢 Connected | 1ms | Active |
-| Database Primary | 🟢 Healthy | 3ms | Active |
-
-## Resource Allocation
-| Resource | Current | Limit | Utilization |
-|:---|---:|---:|:---:|
-| Heap Memory | ${memory} MB | 512 MB | 🟢 Normal |
-| Worker Threads | 4 | 8 | 50% |
-
-**Last Updated:** \`${timestamp} UTC\`
-**Health:** 🟢 *All systems operational*`;
-}
-
-function getDashboardKeyboard(): InlineKeyboard {
-  return new InlineKeyboard()
-    .text("🔄 Refresh Live Stats", "dashboard:refresh")
-    .url("📈 Grafana", "https://grafana.internal");
-}
-
-dashboardFeature.command("status", async (ctx) => {
-  await ctx.replyWithRichMessage({
-    markdown: getDashboardMarkdown(),
-    reply_markup: getDashboardKeyboard(),
-  });
-});
-
-dashboardFeature.callbackQuery("dashboard:refresh", async (ctx) => {
-  await ctx.answerCallbackQuery({ text: "Dashboard metrics refreshed!" });
-
-  await ctx.replyWithRichMessage({
-    markdown: getDashboardMarkdown(),
-    reply_markup: getDashboardKeyboard(),
-  });
-});
-```
-
-### Recipe C: Dynamic `/rich` Command Handler with Safe Error Boundaries
-
-```typescript
-import { Composer, Context, InlineKeyboard } from "grammy";
-
-export type MyContext = Context;
-export const richFeature = new Composer<MyContext>();
-
-richFeature.command("rich")
-  .filter(
-    (ctx) => Boolean(ctx.match),
-    async (ctx) => {
-      const rawMarkdown = ctx.match!;
-
-      try {
-        await ctx.replyWithRichMessage({
-          markdown: rawMarkdown,
-          reply_markup: new InlineKeyboard().text("✨ Rendered via grammY", "noop"),
-        });
-      } catch (err) {
-        // Fallback: If Telegram rejects markdown formatting, display error details
-        const errorText = String(err);
-        await ctx.reply(`Failed to render rich message:\n${errorText}`, {
-          entities: [{
-            offset: 0,
-            length: `Failed to render rich message:\n${errorText}`.length,
-            type: "pre",
-            language: "text",
-          }],
-        });
-      }
-    },
-  );
-
-richFeature.callbackQuery("noop", async (ctx) => {
-  await ctx.answerCallbackQuery();
-});
-```
-
-### Recipe D: Monospace Fallback for Standard `sendMessage`
-
-When constrained to standard `sendMessage` with `parse_mode: "HTML"`, render tables using monospace ASCII formatting:
+Render neatly aligned tables inside `<pre>` blocks:
 
 ```typescript
 export function formatMonospaceTable(headers: string[], rows: string[][]): string {
@@ -476,9 +172,181 @@ export function formatMonospaceTable(headers: string[], rows: string[][]): strin
     "</pre>",
   ].join("\n");
 }
+
+// Example Output:
+// Component │ Status │ Latency
+// ──────────┼────────┼────────
+// Gateway   │ 🟢 Up  │ 12ms
+// Database  │ 🟢 Up  │ 2ms
 ```
-r in update ${err.ctx.update.update_id}:`, err.error);
+
+### B. Clean Key-Value Card Layout
+
+For mobile readability, format cards with bold headers and emoji bullets:
+
+```typescript
+const dashboardCard = [
+  "<b>📊 Infrastructure Metrics</b>",
+  "",
+  "<b>⚙️ Runtime</b>",
+  "• Node: <code>v22.12.0</code>",
+  "• Mode: <code>Polling / Runner</code>",
+  "• Uptime: <code>14h 22m</code>",
+  "",
+  "<b>💾 Memory & Storage</b>",
+  "• Heap: <code>42.1 MB / 512 MB</code>",
+  "• Redis: 🟢 <code>Connected</code>",
+  "",
+  "<b>Status:</b> 🟢 <i>All services operational</i>",
+].join("\n");
+
+await ctx.reply(dashboardCard, { parse_mode: "HTML" });
+```
+
+---
+
+## 5. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle
+
+### Button Types & Grid Layout
+
+```typescript
+import { InlineKeyboard } from "grammy";
+
+const keyboard = new InlineKeyboard()
+  // URL Button
+  .url("📖 Docs", "https://grammy.dev")
+  // Callback Button
+  .text("🔄 Refresh", "stats:refresh")
+  .row() // New row
+  // Mini App Button
+  .webApp("🚀 Open App", "https://app.example.com")
+  // Copy to Clipboard Button
+  .copyText("📋 Copy Code", "INVITE-2026-X");
+```
+
+### Dismissing Loading Spinners with `answerCallbackQuery`
+
+> [!IMPORTANT]
+> Always call `await ctx.answerCallbackQuery()` inside callback query handlers to dismiss the Telegram client loading indicator and prevent timeout errors.
+
+```typescript
+bot.callbackQuery("stats:refresh", async (ctx) => {
+  // 1. Immediately acknowledge callback query
+  await ctx.answerCallbackQuery({
+    text: "Refreshing metrics...",
+    show_alert: false, // false = toast banner; true = modal popup
+  });
+
+  // 2. Edit existing message in-place
+  await ctx.editMessageText(getUpdatedDashboardHtml(), {
+    parse_mode: "HTML",
+    reply_markup: createDashboardKeyboard(),
+  });
+});
+```
+
+---
+
+## 6. Live Streaming & Ephemeral Progress (The Real Way)
+
+To provide real-time feedback during long-running tasks or AI token generation in Telegram:
+
+### Chat Action Typing Indicator
+```typescript
+// Tells the user the bot is typing (lasts 5 seconds or until message is sent)
+await ctx.replyWithChatAction("typing");
+```
+
+### AI / LLM Token Streaming via Throttled `editMessageText`
+
+Telegram rate-limits rapid message editing (~1 edit per second per chat). Throttle editing updates to **800ms–1500ms**:
+
+```typescript
+bot.command("ask", async (ctx) => {
+  const prompt = ctx.match;
+  if (!prompt) return ctx.reply("Please provide a prompt.");
+
+  await ctx.replyWithChatAction("typing");
+  
+  // 1. Send placeholder message
+  const msg = await ctx.reply("<i>Synthesizing answer...</i>", { parse_mode: "HTML" });
+
+  let buffer = "";
+  let lastEditTime = 0;
+  const EDIT_INTERVAL_MS = 1000;
+
+  try {
+    for await (const chunk of fakeAiStream(prompt)) {
+      buffer += chunk;
+      const now = Date.now();
+
+      // 2. Throttled in-place message edit
+      if (now - lastEditTime > EDIT_INTERVAL_MS) {
+        lastEditTime = now;
+        await ctx.api.editMessageText(ctx.chat.id, msg.message_id, buffer, {
+          parse_mode: "HTML",
+        }).catch(() => {}); // Catch flood/same content errors safely
+      }
+    }
+
+    // 3. Final edit with complete response
+    await ctx.api.editMessageText(ctx.chat.id, msg.message_id, buffer, {
+      parse_mode: "HTML",
+    });
+  } catch (err) {
+    console.error("Stream error:", err);
+  }
+});
+```
+
+---
+
+## 7. Production Implementation Recipes
+
+### Recipe A: Interactive Infrastructure Dashboard Card
+
+```typescript
+import { Composer, Context, InlineKeyboard } from "grammy";
+
+export type MyContext = Context;
+export const dashboardFeature = new Composer<MyContext>();
+
+function renderDashboard(): string {
+  const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
+  const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+
+  return [
+    "<b>🖥️ Server Infrastructure Dashboard</b>",
+    "",
+    "<b>⚡ Health & Performance</b>",
+    "• Gateway: 🟢 <code>Operational (8ms)</code>",
+    "• Database: 🟢 <code>Connected (2ms)</code>",
+    `• Heap Usage: <code>${memory} MB</code>`,
+    "",
+    `<b>Last Updated:</b> <code>${timestamp} UTC</code>`,
+  ].join("\n");
+}
+
+function dashboardKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("🔄 Refresh", "dash:refresh")
+    .url("📈 Grafana", "https://grafana.internal");
+}
+
+dashboardFeature.command("status", async (ctx) => {
+  await ctx.reply(renderDashboard(), {
+    parse_mode: "HTML",
+    reply_markup: dashboardKeyboard(),
+  });
 });
 
-bot.start();
+dashboardFeature.callbackQuery("dash:refresh", async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Dashboard updated!" });
+  
+  await ctx.editMessageText(renderDashboard(), {
+    parse_mode: "HTML",
+    reply_markup: dashboardKeyboard(),
+  }).catch(() => {});
+});
 ```
+

@@ -67,18 +67,19 @@ Every middleware receives a `Context` instance (`ctx`) containing the current up
 - `ctx.senderId`: Identifier of the user (`ctx.from?.id`).
 
 ### Context Methods
-- `ctx.reply(text, options)`: Sends message to current chat (alias for `ctx.api.sendMessage(ctx.chat.id, text, options)`).
-- `ctx.replyWithRichMessage(options)`: Sends a rich message with native Markdown tables/formulas/expandables up to 32k chars (alias for `ctx.api.sendRichMessage(ctx.chat.id, options)`).
-- `ctx.replyWithRichMessageDraft(options)`: Streams an ephemeral 30s preview draft of a rich message during real-time generation (alias for `ctx.api.sendRichMessageDraft(ctx.chat.id, options)`).
-- `ctx.replyWithDraft(text, options)`: Streams an ephemeral 30s preview draft of a standard text message (alias for `ctx.api.sendMessageDraft(ctx.chat.id, text, options)`).
-- `ctx.replyWithPhoto(photo, options)`: Sends photo to current chat.
-- `ctx.replyWithDocument(doc, options)`: Sends document to current chat.
+- `ctx.reply(text, options)`: Sends text message to current chat (shortcut for `ctx.api.sendMessage(ctx.chat.id, text, options)`).
+- `ctx.replyWithPhoto(photo, options)`: Sends photo to current chat (`ctx.api.sendPhoto`).
+- `ctx.replyWithDocument(doc, options)`: Sends document to current chat (`ctx.api.sendDocument`).
+- `ctx.replyWithAudio(audio, options)`: Sends audio file to current chat (`ctx.api.sendAudio`).
+- `ctx.replyWithVideo(video, options)`: Sends video file to current chat (`ctx.api.sendVideo`).
+- `ctx.replyWithVoice(voice, options)`: Sends voice message to current chat (`ctx.api.sendVoice`).
+- `ctx.replyWithChatAction(action)`: Sends typing or media upload status (`ctx.api.sendChatAction`).
 - `ctx.answerCallbackQuery(options)`: Responds to an incoming callback query.
 - `ctx.editMessageText(text, options)`: Edits the text of the message associated with `ctx`.
 - `ctx.deleteMessage()`: Deletes the message associated with `ctx`.
 
 > [!NOTE]
-> **grammY 2.0 Roadmap:** In grammY 2.0, `ctx.reply*` shortcuts are renamed to `ctx.send*` (e.g. `ctx.reply` $\rightarrow$ `ctx.send`, `ctx.replyWithRichMessage` $\rightarrow$ `ctx.sendRichMessage`, `ctx.replyWithPhoto` $\rightarrow$ `ctx.sendPhoto`). See [`v2-migration.md`](v2-migration.md) for details.
+> **grammY 2.0 Roadmap:** In grammY 2.0, `ctx.reply*` shortcuts are renamed to `ctx.send*` (e.g. `ctx.reply` $\rightarrow$ `ctx.send`, `ctx.replyWithPhoto` $\rightarrow$ `ctx.sendPhoto`, `ctx.replyWithVideo` $\rightarrow$ `ctx.sendVideo`). See [`v2-migration.md`](v2-migration.md) for details.
 
 ---
 
@@ -198,34 +199,26 @@ Modern grammY uses `reply_parameters` for quoting / replying to existing message
 // 1. Standard text reply
 await ctx.reply("Simple reply");
 
-// 2. Replying to a specific message with parameters
+// 2. Replying with HTML formatting
+await ctx.reply("<b>Status:</b> 🟢 <i>Online</i>", {
+  parse_mode: "HTML",
+});
+
+// 3. Replying to a specific message with parameters (modern quote)
 await ctx.reply("Quoting your message", {
   reply_parameters: {
     message_id: ctx.msg.message_id,
     allow_sending_without_reply: true,
-    quote: "custom quoted snippet", // optional quote excerpt
+    quote: "custom quoted snippet",
   },
 });
 
-// 3. Native Rich Message (Tables, LaTeX, Expandable blocks up to 32k chars)
-await ctx.replyWithRichMessage({
-  markdown: "| Metric | Value |\n|---|---:|\n| CPU | 12% |",
-});
-
-// 4. Ephemeral Draft Streaming (30s preview during AI generation)
-await ctx.replyWithRichMessageDraft({
-  markdown: "Thinking and generating...",
-});
-
-// 5. Direct API calls
+// 4. Direct API call via bot.api
 await bot.api.sendMessage(chatId, "Direct notification", {
   parse_mode: "HTML",
   link_preview_options: {
     is_disabled: true,
   },
-});
-await bot.api.sendRichMessage(chatId, {
-  markdown: "<b>Direct Rich Message</b>",
 });
 ```
 

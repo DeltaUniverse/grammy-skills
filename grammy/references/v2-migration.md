@@ -41,9 +41,6 @@ In grammY 1.x, context shortcuts used the `reply` prefix, which was confusing be
 | grammY 1.x (Deprecated in 2.0) | grammY 2.0 (Standard) | Underlying Bot API Method |
 | :--- | :--- | :--- |
 | `ctx.reply(text, options)` | `ctx.send(text, options)` | `api.sendMessage` |
-| `ctx.replyWithRichMessage(options)` | `ctx.sendRichMessage(options)` | `api.sendRichMessage` |
-| `ctx.replyWithRichMessageDraft(options)` | `ctx.sendRichMessageDraft(options)` | `api.sendRichMessageDraft` |
-| `ctx.replyWithDraft(text, options)` | `ctx.sendDraft(text, options)` | `api.sendMessageDraft` |
 | `ctx.replyWithPhoto(photo, options)` | `ctx.sendPhoto(photo, options)` | `api.sendPhoto` |
 | `ctx.replyWithVideo(video, options)` | `ctx.sendVideo(video, options)` | `api.sendVideo` |
 | `ctx.replyWithDocument(doc, options)` | `ctx.sendDocument(doc, options)` | `api.sendDocument` |
@@ -181,8 +178,8 @@ bot.command("start", async (ctx) => {
     reply_markup: new InlineKeyboard().text("Action", "btn_action"),
   });
   
-  await ctx.replyWithRichMessage({
-    markdown: "| Metric | Value |\n|---|---:|\n| Latency | 12ms |",
+  await ctx.reply("<b>Status:</b> 🟢 <i>Online</i>", {
+    parse_mode: "HTML",
   });
 });
 
@@ -201,8 +198,8 @@ bot.command("start", async (ctx) => {
     reply_markup: new InlineKeyboard().text("Action", "btn_action"),
   });
   
-  await ctx.sendRichMessage({
-    markdown: "| Metric | Value |\n|---|---:|\n| Latency | 12ms |",
+  await ctx.send("<b>Status:</b> 🟢 <i>Online</i>", {
+    parse_mode: "HTML",
   });
 });
 
@@ -216,6 +213,7 @@ bot.start();
 When writing libraries, middleware, or skills that need to stay forward-compatible:
 
 - [ ] Recognize both `ctx.reply` (v1) and `ctx.send` (v2).
-- [ ] For rich messages, recognize `ctx.replyWithRichMessage` (v1) and `ctx.sendRichMessage` (v2).
-- [ ] For draft previews, recognize `ctx.replyWithRichMessageDraft` (v1) and `ctx.sendRichMessageDraft` (v2).
+- [ ] For media messages, recognize `ctx.replyWithPhoto` (v1) and `ctx.sendPhoto` (v2).
+- [ ] For document messages, recognize `ctx.replyWithDocument` (v1) and `ctx.sendDocument` (v2).
+- [ ] Migrate context flavors from additive (`&`) to transformative wrappers (`Flavor<Context>`).
 - [ ] Document version requirements clearly (`v1.45.1` for production vs `v2.0.0-beta.x` for beta testing).

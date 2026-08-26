@@ -1,6 +1,6 @@
 ---
 name: grammy
-description: Comprehensive expert skill for building Telegram Bots using grammY (v1.45.1) with TypeScript/JavaScript. Covers core architecture, context flavors, sessions, multi-step conversations, interactive keyboards/menus, native rich messages (replyWithRichMessage, replyWithRichMessageDraft, tables, LaTeX math), error handling, runners, and multi-platform deployments (VPS, Edge, Serverless).
+description: Comprehensive expert skill for building Telegram Bots using grammY (v1.45.1) with TypeScript/JavaScript. Covers core architecture, context flavors, sessions, multi-step conversations, interactive keyboards/menus, rich formatting (HTML, @grammyjs/format, @grammyjs/parse-mode, tables), error handling, runners, and multi-platform deployments (VPS, Edge, Serverless).
 verified_version: 1.45.1
 last_verified: 2026-08-26
 ---
@@ -30,10 +30,10 @@ This skill guides AI coding agents in designing, building, and deploying robust 
    - Use `await conversation.now()` and `await conversation.random()` to preserve deterministic replay.
 4. **Guaranteed Sequentiality Under Concurrency:** When using `@grammyjs/runner`, always register `sequentialize((ctx) => ctx.chat?.id.toString())` to prevent session race conditions and write-after-read (WAR) hazards.
 5. **Differentiated Error Handling:** Always install a global `bot.catch` differentiating `GrammyError` (API errors), `HttpError` (network timeouts), and generic runtime exceptions.
-6. **Rich Messaging & UI Interaction Discipline:**
-   - Use **`ctx.replyWithRichMessage({ markdown })`** for visual tables (`|---|`), mathematical formulas (LaTeX), and large structured documents up to 32,768 characters without escape character hazards.
-   - Use **`ctx.replyWithRichMessageDraft({ markdown })`** to stream ephemeral 30-second preview drafts during real-time generation (e.g. AI token streaming), followed by a final `ctx.replyWithRichMessage` to persist.
-   - For standard messages under 4,096 characters, prefer `"HTML"` parse mode (`<b>`, `<i>`, `<code>`, `<a href="...">`) with HTML entity escaping.
+6. **Rich Formatting & UI Interaction Discipline:**
+   - Prefer `"HTML"` parse mode (`<b>`, `<i>`, `<code>`, `<a href="...">`, `<tg-spoiler>`, `<blockquote expandable>`) with HTML entity escaping, or `@grammyjs/format` for 100% type-safe templating.
+   - Render tables using monospace ASCII `<pre>` code blocks.
+   - For real-time progress / AI responses, send `ctx.replyWithChatAction("typing")` and throttle in-place edits (`ctx.api.editMessageText`) to ~1 second.
    - Encapsulate rich features in a `Composer<MyContext>` along with their `InlineKeyboard` layouts and `composer.callbackQuery()` listeners.
    - Always call `await ctx.answerCallbackQuery()` immediately in callback query listeners to clear the client loading spinner and prevent timeouts.
 
@@ -92,8 +92,8 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 
 | File | Key Topics Covered |
 | :--- | :--- |
-| [`core.md`](references/core.md) | `Bot` class options, `Context` shortcuts (`replyWithRichMessage`, `replyWithRichMessageDraft`), context flavors, `Composer` branching, filter queries (`bot.on`), `InputFile`, `reply_parameters`, HTML formatting |
-| [`rich-messages.md`](references/rich-messages.md) | `replyWithRichMessage` & `sendRichMessage` (tables, LaTeX math, expandables, 32k chars), `replyWithRichMessageDraft` ephemeral streaming lifecycle, HTML parse mode tags, `link_preview_options`, `InlineKeyboard` builders, `answerCallbackQuery` lifecycle |
+| [`core.md`](references/core.md) | `Bot` class options, `Context` shortcuts (`ctx.reply`, `ctx.replyWithPhoto`), context flavors, `Composer` branching, filter queries (`bot.on`), `InputFile`, `reply_parameters`, HTML formatting |
+| [`rich-messages.md`](references/rich-messages.md) | HTML formatting, `@grammyjs/format`, `@grammyjs/parse-mode`, ASCII monospace tables, AI streaming via `editMessageText`, `InlineKeyboard` builders, `answerCallbackQuery` lifecycle |
 | [`sessions.md`](references/sessions.md) | Built-in `session()`, `initial` factory, `SessionFlavor`, storage adapters (SQLite, Redis, Supabase, Free), multi-sessions, `lazySession`, `enhanceStorage` |
 | [`conversations.md`](references/conversations.md) | `@grammyjs/conversations`, replay engine mechanics, 3 golden rules, `conversation.wait()`, `waitFor`, `conversation.external()`, `conversation.form` |
 | [`keyboards.md`](references/keyboards.md) | Built-in `InlineKeyboard`, custom `Keyboard`, callback handling, `@grammyjs/menu` plugin, `MenuRange`, submenus and back buttons |
