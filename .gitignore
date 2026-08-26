@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+.agents/
+.agent/
+.pi/
+.claude/
+.cursor/
+.windsurf/
+.roo/
+.cline/
+.skills/
+dist/
+tmp/

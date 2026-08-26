@@ -1,0 +1,32 @@
+{
+  "verified_version": "1.45.1",
+  "last_verified": "2026-08-23",
+  "sources": [
+    "https://github.com/grammyjs/grammY/releases",
+    "https://grammy.dev/guide/basics",
+    "https://grammy.dev/guide/context",
+    "https://grammy.dev/guide/middleware",
+    "https://grammy.dev/guide/filter-queries",
+    "https://grammy.dev/guide/errors",
+    "https://grammy.dev/guide/deployment-types",
+    "https://grammy.dev/plugins/session",
+    "https://grammy.dev/plugins/conversations",
+    "https://grammy.dev/plugins/keyboard",
+    "https://grammy.dev/ref/core/keyboard",
+    "https://grammy.dev/plugins/menu",
+    "https://grammy.dev/plugins/runner",
+    "https://grammy.dev/hosting/comparison",
+    "https://grammy.dev/hosting/vps",
+    "https://grammy.dev/hosting/deno-deploy",
+    "https://grammy.dev/hosting/supabase",
+    "https://grammy.dev/hosting/cloudflare-workers",
+    "https://grammy.dev/ref/core/context#replywithrichmessage",
+    "https://grammy.dev/ref/core/context#replywithrichmessagedraft",
+    "https://grammy.dev/ref/core/api#sendrichmessage",
+    "https://grammy.dev/ref/core/api#sendrichmessagedraft",
+    "https://grammy.dev/hosting/fly",
+    "https://grammy.dev/hosting/vercel",
+    "https://v2.grammy.dev",
+    "https://jsr.io/@grammyjs/grammy/doc"
+  ]
+}

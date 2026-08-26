@@ -1,0 +1,29 @@
+{
+  "name": "grammy-skills",
+  "version": "1.45.1",
+  "description": "Comprehensive, agent-agnostic skill and reference library for developing Telegram Bots with grammY (v1.45.1).",
+  "type": "module",
+  "scripts": {
+    "install:global": "./install.sh --global",
+    "install:global:link": "./install.sh --global --link",
+    "install:project": "./install.sh --project",
+    "install:project:link": "./install.sh --project --link",
+    "status": "./install.sh --status",
+    "uninstall:global": "./install.sh --uninstall --global",
+    "uninstall:project": "./install.sh --uninstall --project"
+  },
+  "keywords": [
+    "grammy",
+    "telegram",
+    "bot",
+    "ai-agent",
+    "agent-skills",
+    "antigravity",
+    "claude-code",
+    "cursor",
+    "windsurf",
+    "roo-code"
+  ],
+  "author": "Google DeepMind Antigravity Pair Programmer",
+  "license": "MIT"
+}
