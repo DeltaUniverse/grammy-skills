@@ -1,6 +1,6 @@
 # grammY Core Architecture Reference
 
-> **Verified Version:** grammY `v1.45.1`  
+> **Verified Version:** grammY `v1.46.0` (Bot API 10.0–10.3 support)  
 > **Source:** `https://grammy.dev/guide/basics`, `https://grammy.dev/guide/context`, `https://grammy.dev/guide/middleware`, `https://grammy.dev/guide/filter-queries`
 
 ---
@@ -61,10 +61,16 @@ Every middleware receives a `Context` instance (`ctx`) containing the current up
 - `ctx.editedMessage`: Present on `edited_message` updates.
 - `ctx.callbackQuery`: Present on `callback_query` updates.
 - `ctx.inlineQuery`: Present on `inline_query` updates.
+- `ctx.msg`: Unified shortcut to `ctx.message ?? ctx.editedMessage ?? ctx.channelPost ?? ctx.editedChannelPost ?? ctx.callbackQuery?.message ?? ctx.guestMessage`.
 - `ctx.chat`: Chat object where update originated (`ctx.message?.chat` or `ctx.callbackQuery?.message?.chat`).
 - `ctx.from`: User object who performed the action (`ctx.message?.from` or `ctx.callbackQuery?.from`).
 - `ctx.chatId`: Identifier of the chat (`ctx.chat?.id`).
 - `ctx.senderId`: Identifier of the user (`ctx.from?.id`).
+
+### Guest Message Properties (Bot API 10.0+)
+- `ctx.msg.guest_query_id`: Unique string identifier when replying to guest queries.
+- `ctx.msg.guest_bot_caller_user`: `User` object of the user initiating the guest interaction.
+- `ctx.msg.guest_bot_caller_chat`: `Chat` object representing where the guest interaction took place.
 
 ### Context Methods
 - `ctx.reply(text, options)`: Sends text message to current chat (shortcut for `ctx.api.sendMessage(ctx.chat.id, text, options)`).
@@ -75,6 +81,7 @@ Every middleware receives a `Context` instance (`ctx`) containing the current up
 - `ctx.replyWithVoice(voice, options)`: Sends voice message to current chat (`ctx.api.sendVoice`).
 - `ctx.replyWithChatAction(action)`: Sends typing or media upload status (`ctx.api.sendChatAction`).
 - `ctx.answerCallbackQuery(options)`: Responds to an incoming callback query.
+- `ctx.answerGuestQuery(result)`: Responds to an incoming guest query (Bot API 10.0+).
 - `ctx.editMessageText(text, options)`: Edits the text of the message associated with `ctx`.
 - `ctx.deleteMessage()`: Deletes the message associated with `ctx`.
 
@@ -169,7 +176,7 @@ bot.use(feature);
 Filter queries allow matching specific update shapes declaratively via `bot.on()`.
 
 ### Query Syntax Levels
-- **L1 (Update Type):** `"message"`, `"edited_message"`, `"callback_query"`, `"inline_query"`, etc.
+- **L1 (Update Type):** `"message"`, `"edited_message"`, `"callback_query"`, `"inline_query"`, `"guest_message"`, etc.
 - **L2 (Message Subtype):** `":text"`, `":photo"`, `":document"`, `":location"`, `":contact"`, `":voice"`, `":video"`, etc.
 - **L3 (Entity / Modifier):** `"::url"`, `"::mention"`, `"::bot_command"`, `"::email"`, etc.
 
@@ -177,10 +184,20 @@ Filter queries allow matching specific update shapes declaratively via `bot.on()
 Pass an array of queries to match ANY of the conditions (logical OR):
 
 ```typescript
-// Matches incoming text messages OR incoming photo captions
+// 1. Matches incoming text messages OR incoming photo captions
 bot.on(["message:text", "message:photo"], async (ctx) => {
   const textOrCaption = ctx.msg.text ?? ctx.msg.caption;
   await ctx.reply(`Received content: ${textOrCaption}`);
+});
+
+// 2. Matches guest messages in chats where bot is not a member (Bot API 10.0+)
+bot.on("guest_message:text", async (ctx) => {
+  await ctx.answerGuestQuery({
+    type: "article",
+    id: "reply_1",
+    title: "Guest Response",
+    input_message_content: { message_text: "Replying to guest prompt!" },
+  });
 });
 ```
 

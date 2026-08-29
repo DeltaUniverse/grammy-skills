@@ -1,8 +1,11 @@
 {
-  "verified_version": "1.45.1",
-  "last_verified": "2026-08-23",
+  "verified_version": "1.46.0",
+  "last_verified": "2026-08-29",
   "sources": [
     "https://github.com/grammyjs/grammY/releases",
+    "https://core.telegram.org/bots/api#recent-changes",
+    "https://core.telegram.org/bots/api#answerguestquery",
+    "https://core.telegram.org/bots/api#update",
     "https://grammy.dev/guide/basics",
     "https://grammy.dev/guide/context",
     "https://grammy.dev/guide/middleware",

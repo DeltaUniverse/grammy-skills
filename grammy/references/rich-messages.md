@@ -1,6 +1,6 @@
 # grammY Rich Formatting, Tables, Keyboards & Streaming Reference
 
-> **Verified Version:** grammY `v1.45.1` (with grammY 2.0 Roadmap)  
+> **Verified Version:** grammY `v1.46.0` (with Bot API 10.0–10.3 & grammY 2.0 Roadmap)  
 > **Source:** `https://grammy.dev/guide/basics`, `https://grammy.dev/plugins/keyboard`, `https://grammy.dev/plugins/parse-mode`, `https://grammy.dev/plugins/format`
 
 ---
@@ -11,19 +11,20 @@
   - [Supported HTML Tags](#supported-html-tags)
   - [Safe HTML Escaping Utility](#safe-html-escaping-utility)
   - [Link Preview Control (`link_preview_options`)](#link-preview-control-link_preview_options)
-- [3. Type-Safe Formatting Plugins](#3-type-safe-formatting-plugins)
+- [3. Bot API 10.1–10.3 Rich Messages & Blocks](#3-bot-api-101103-rich-messages--blocks)
+- [4. Type-Safe Formatting Plugins](#4-type-safe-formatting-plugins)
   - [`@grammyjs/format` (JSX-like Builder)](#grammyjsformat-jsx-like-builder)
   - [`@grammyjs/parse-mode` (Hydrated Reply Shortcuts)](#grammyjsparse-mode-hydrated-reply-shortcuts)
-- [4. Rendering Markdown Tables & Dashboards in Telegram](#4-rendering-markdown-tables--dashboards-in-telegram)
+- [5. Rendering Markdown Tables & Dashboards in Telegram](#5-rendering-markdown-tables--dashboards-in-telegram)
   - [A. Monospace ASCII `<pre>` Code Block (Recommended)](#a-monospace-ascii-pre-code-block-recommended)
   - [B. Clean Key-Value Card Layout](#b-clean-key-value-card-layout)
-- [5. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle](#5-inline-keyboards-inlinekeyboard--callback-lifecycle)
+- [6. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle](#6-inline-keyboards-inlinekeyboard--callback-lifecycle)
   - [Button Types & Grid Layout](#button-types--grid-layout)
   - [Dismissing Loading Spinners with `answerCallbackQuery`](#dismissing-loading-spinners-with-answercallbackquery)
-- [6. Live Streaming & Ephemeral Progress (The Real Way)](#6-live-streaming--ephemeral-progress-the-real-way)
+- [7. Live Streaming & Ephemeral Progress (The Real Way)](#7-live-streaming--ephemeral-progress-the-real-way)
   - [Chat Action Typing Indicator](#chat-action-typing-indicator)
   - [AI / LLM Token Streaming via Throttled `editMessageText`](#ai--llm-token-streaming-via-throttled-editmessagetext)
-- [7. Production Implementation Recipes](#7-production-implementation-recipes)
+- [8. Production Implementation Recipes](#8-production-implementation-recipes)
   - [Recipe A: Interactive Infrastructure Dashboard Card](#recipe-a-interactive-infrastructure-dashboard-card)
   - [Recipe B: AI Streaming Response Handler](#recipe-b-ai-streaming-response-handler)
   - [Recipe C: Dynamic Formatted Message with Custom Keyboard](#recipe-c-dynamic-formatted-message-with-custom-keyboard)
@@ -97,7 +98,24 @@ await ctx.reply(`Check our guide: <a href="https://grammy.dev">grammY Docs</a>`,
 
 ---
 
-## 3. Type-Safe Formatting Plugins
+## 3. Bot API 10.1–10.3 Rich Messages & Blocks
+
+Telegram Bot API 10.1 through 10.3 introduced native **Rich Messages** (`InputRichMessage`) allowing advanced block layout structures directly:
+
+### Features Introduced:
+1. **Rich Message Payloads (`InputRichMessage`):**
+   - Supports explicit `html`, `markdown`, or `blocks` format.
+   - Blocks include: `InputRichBlockParagraph`, `InputRichBlockList`, `InputRichBlockMathematicalExpression`, `RichBlockExpandableBlockQuotation`, `RichBlockDocument`.
+2. **Compact Tables (Bot API 10.3):**
+   - Table layouts support the `is_compact: true` parameter for sleek inline rendering.
+3. **Rich Message Buttons:**
+   - Dedicated buttons (`RichMessageButton`, `RichTextButton`, `RichBlockButtons`) that integrate directly with structured rich content and guest query flows.
+4. **Ephemeral Message Parameters (`EphemeralMessageParameters`):**
+   - Enables temporary user-targeted messages without public clutter.
+
+---
+
+## 4. Type-Safe Formatting Plugins
 
 ### `@grammyjs/format` (JSX-like Builder)
 
@@ -145,7 +163,7 @@ bot.command("start", async (ctx) => {
 
 ---
 
-## 4. Rendering Markdown Tables & Dashboards in Telegram
+## 5. Rendering Markdown Tables & Dashboards in Telegram
 
 Because Telegram Bot API does not render GUI markdown tables natively, production bots use two proven layout techniques:
 
@@ -205,7 +223,7 @@ await ctx.reply(dashboardCard, { parse_mode: "HTML" });
 
 ---
 
-## 5. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle
+## 6. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle
 
 ### Button Types & Grid Layout
 
@@ -247,7 +265,7 @@ bot.callbackQuery("stats:refresh", async (ctx) => {
 
 ---
 
-## 6. Live Streaming & Ephemeral Progress (The Real Way)
+## 7. Live Streaming & Ephemeral Progress (The Real Way)
 
 To provide real-time feedback during long-running tasks or AI token generation in Telegram:
 
@@ -301,7 +319,7 @@ bot.command("ask", async (ctx) => {
 
 ---
 
-## 7. Production Implementation Recipes
+## 8. Production Implementation Recipes
 
 ### Recipe A: Interactive Infrastructure Dashboard Card
 

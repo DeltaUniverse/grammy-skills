@@ -1,7 +1,7 @@
 {
   "name": "grammy-skills",
-  "version": "1.45.1",
-  "description": "Comprehensive, agent-agnostic skill and reference library for developing Telegram Bots with grammY (v1.45.1).",
+  "version": "1.46.0",
+  "description": "Comprehensive, agent-agnostic skill and reference library for developing Telegram Bots with grammY (v1.46.0) and Telegram Bot API 10.0-10.3.",
   "type": "module",
   "scripts": {
     "update": "./update.sh",

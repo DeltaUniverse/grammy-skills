@@ -1,0 +1,16 @@
+{
+  "name": "guest-message-bot",
+  "version": "1.0.0",
+  "description": "Simple Telegram Bot testing Guest Mode and guest_message updates with grammY v1.46.0",
+  "type": "module",
+  "main": "bot.mjs",
+  "scripts": {
+    "start": "node bot.mjs",
+    "test": "node test-simulation.mjs"
+  },
+  "dependencies": {
+    "grammy": "^1.46.0",
+    "@grammyjs/runner": "^2.0.3",
+    "dotenv": "^16.4.7"
+  }
+}

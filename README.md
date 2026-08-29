@@ -1,6 +1,6 @@
 # grammY Telegram Bot Skill for AI Coding Agents
 
-An agent-agnostic, comprehensive skill and reference library for building high-quality Telegram Bots with **grammY** (`v1.45.1`) using TypeScript and JavaScript.
+An agent-agnostic, comprehensive skill and reference library for building high-quality Telegram Bots with **grammY** (`v1.46.0`, Telegram Bot API 10.0–10.3) using TypeScript and JavaScript.
 
 Compatible with all leading AI coding assistants:
 - **Pi Coding Agent (`pi`)**
@@ -18,7 +18,8 @@ Compatible with all leading AI coding assistants:
 - **[`grammy/SKILL.md`](grammy/SKILL.md)**: Main skill file with Freshness Protocol, Lazy Senior Principles, Context Typing, Decision Tree, and Reference Map.
 - **[`grammy/references/`](grammy/references/)**: 100% factual reference files derived directly from official documentation:
   - [`core.md`](grammy/references/core.md) — Bot class, context flavors, filter queries, message sending, and file uploads.
-  - [`rich-messages.md`](grammy/references/rich-messages.md) — HTML formatting, `@grammyjs/format`, `@grammyjs/parse-mode`, ASCII monospace tables, AI streaming via `editMessageText`, and inline keyboards.
+  - [`guest-messages.md`](grammy/references/guest-messages.md) — Telegram Bot API 10.0–10.3 Guest Bot Mode, `guest_message` updates, `ctx.answerGuestQuery()`, and `@BotFather` setup.
+  - [`rich-messages.md`](grammy/references/rich-messages.md) — HTML formatting, Bot API 10.1–10.3 Rich Blocks (`InputRichMessage`), compact tables, `@grammyjs/format`, `@grammyjs/parse-mode`, ASCII monospace tables, AI streaming via `editMessageText`, and inline keyboards.
   - [`sessions.md`](grammy/references/sessions.md) — Built-in sessions, multi-sessions, storage adapters (SQLite, Redis, Supabase, Free), lazy sessions, and TTL enhancement.
   - [`conversations.md`](grammy/references/conversations.md) — Async multi-step dialogs, Replay Engine rules, determinism, and form builders.
   - [`keyboards.md`](grammy/references/keyboards.md) — Inline keyboards, custom reply keyboards, callback queries, and the Menu plugin.
