@@ -8,49 +8,57 @@
 ## Table of Contents
 - [1. Message Formatting in Telegram & grammY](#1-message-formatting-in-telegram--grammy)
 - [2. HTML Parse Mode (`parse_mode: "HTML"`)](#2-html-parse-mode-parse_mode-html)
-  - [Supported HTML Tags](#supported-html-tags)
+  - [Supported HTML Tags (Classic)](#supported-html-tags-classic)
   - [Safe HTML Escaping Utility](#safe-html-escaping-utility)
   - [Link Preview Control (`link_preview_options`)](#link-preview-control-link_preview_options)
-- [3. Bot API 10.1–10.3 Rich Messages & Blocks](#3-bot-api-101103-rich-messages--blocks)
-- [4. Type-Safe Formatting Plugins](#4-type-safe-formatting-plugins)
+- [3. Telegram Bot API 10.1–10.3 Rich Messages & Formatting](#3-telegram-bot-api-101103-rich-messages--formatting)
+  - [Overview & Limits](#overview--limits)
+  - [Rich Markdown Style Reference](#rich-markdown-style-reference)
+  - [Rich HTML Style Reference](#rich-html-style-reference)
+  - [Embedded Buttons (`<tg-button>` & `<tg-button-row>`)](#embedded-buttons-tg-button--tg-button-row)
+  - [Streaming AI Drafts & Thinking Block (`<tg-thinking>`)](#streaming-ai-drafts--thinking-block-tg-thinking)
+- [4. Media Albums: Conventional `sendMediaGroup` vs Rich `<tg-slideshow>` / `<tg-collage>`](#4-media-albums-conventional-sendmediagroup-vs-rich-tg-slideshow--tg-collage)
+  - [The Critical Difference: Buttons on Media Albums](#the-critical-difference-buttons-on-media-albums)
+  - [When to Use What](#when-to-use-what)
+  - [Attaching Local & Remote Files via `tg://...` Links](#attaching-local--remote-files-via-tg-links)
+- [5. Type-Safe Formatting Plugins](#5-type-safe-formatting-plugins)
   - [`@grammyjs/format` (JSX-like Builder)](#grammyjsformat-jsx-like-builder)
   - [`@grammyjs/parse-mode` (Hydrated Reply Shortcuts)](#grammyjsparse-mode-hydrated-reply-shortcuts)
-- [5. Rendering Markdown Tables & Dashboards in Telegram](#5-rendering-markdown-tables--dashboards-in-telegram)
-  - [A. Monospace ASCII `<pre>` Code Block (Recommended)](#a-monospace-ascii-pre-code-block-recommended)
-  - [B. Clean Key-Value Card Layout](#b-clean-key-value-card-layout)
-- [6. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle](#6-inline-keyboards-inlinekeyboard--callback-lifecycle)
-  - [Button Types & Grid Layout](#button-types--grid-layout)
-  - [Dismissing Loading Spinners with `answerCallbackQuery`](#dismissing-loading-spinners-with-answercallbackquery)
-- [7. Live Streaming & Ephemeral Progress (The Real Way)](#7-live-streaming--ephemeral-progress-the-real-way)
-  - [Chat Action Typing Indicator](#chat-action-typing-indicator)
-  - [AI / LLM Token Streaming via Throttled `editMessageText`](#ai--llm-token-streaming-via-throttled-editmessagetext)
+- [6. Monospace Tables vs Native Rich Tables](#6-monospace-tables-vs-native-rich-tables)
+  - [A. Native Rich Table (`<table>` / Markdown Table)](#a-native-rich-table-table--markdown-table)
+  - [B. Monospace ASCII `<pre>` Code Block (Classic fallback)](#b-monospace-ascii-pre-code-block-classic-fallback)
+- [7. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle](#7-inline-keyboards-inlinekeyboard--callback-lifecycle)
 - [8. Production Implementation Recipes](#8-production-implementation-recipes)
-  - [Recipe A: Interactive Infrastructure Dashboard Card](#recipe-a-interactive-infrastructure-dashboard-card)
-  - [Recipe B: AI Streaming Response Handler](#recipe-b-ai-streaming-response-handler)
-  - [Recipe C: Dynamic Formatted Message with Custom Keyboard](#recipe-c-dynamic-formatted-message-with-custom-keyboard)
+  - [Recipe A: Media Album / Slideshow with Interactive Buttons (Remote URLs)](#recipe-a-media-album--slideshow-with-interactive-buttons-remote-urls)
+  - [Recipe B: Rich Media Slideshow with Local File Uploads (`InputFile`)](#recipe-b-rich-media-slideshow-with-local-file-uploads-inputfile)
+  - [Recipe C: Interactive Collage Card with Action Row](#recipe-c-interactive-collage-card-with-action-row)
+  - [Recipe D: Full Rich Markdown Report with Nested Details, Math & Footnotes](#recipe-d-full-rich-markdown-report-with-nested-details-math--footnotes)
+  - [Recipe E: Real-Time AI Streaming with Drafts & Thinking Block](#recipe-e-real-time-ai-streaming-with-drafts--thinking-block)
 
 ---
 
 ## 1. Message Formatting in Telegram & grammY
 
-Telegram Bot API relies on `sendMessage` (exposed via `ctx.reply()` in 1.x and `ctx.send()` in 2.0). All visual richness—including bold headers, monospace code snippets, expandable quotes, spoilers, and custom emojis—is controlled via parse modes (`parse_mode`) or message entities.
+Telegram Bot API provides two primary ways to format text:
+1. **Classic Message Formatting (`sendMessage` / `ctx.reply`):** Uses `parse_mode: "HTML"`, `"MarkdownV2"`, or message entities. Supports basic styling (bold, italic, spoiler, expandable blockquote, custom emoji).
+2. **Rich Messages (`sendRichMessage` / `sendRichMessageDraft`):** Introduced in **Bot API 10.1–10.3**. Uses structured `InputRichMessage` with native headings, tables, collages, slideshows, collapsible details, math formulas, embedded buttons, and local media bindings.
 
-### Comparison of Formatting Options
+### Formatting Strategies Matrix
 
-| Strategy | Advantages | Caveats | Best Use Case |
+| Strategy | Capabilities | Inline Buttons | Best Use Case |
 | :--- | :--- | :--- | :--- |
-| **`parse_mode: "HTML"`** | Clean, intuitive, highly reliable | Requires escaping `<`, `>`, `&` in dynamic text | **Default recommendation for 95% of bots** |
-| **`@grammyjs/format`** | 100% type-safe, zero manual escaping | Extra dependency | Dynamic templating and complex structured texts |
-| **`@grammyjs/parse-mode`** | Adds `ctx.replyWithHTML`, `ctx.replyWithMarkdown` | Plugin setup required | Convenience shortcuts |
-| **`parse_mode: "MarkdownV2"`** | Standard markdown syntax | Fragile; requires escaping 18 special characters | Static templates only |
+| **`sendRichMessage` (Markdown / HTML)** | Headings, Slideshows, Collages, Tables, Math, Details, Embedded Buttons | ✅ Embedded `<tg-button>` OR `reply_markup` | **Media albums with buttons, AI streaming, complex cards, dashboards** |
+| **`parse_mode: "HTML"` (Classic)** | Bold, italic, code, blockquotes, spoilers, custom emojis | ✅ via `reply_markup: InlineKeyboard` | Standard text replies, simple notifications |
+| **`sendMediaGroup` (Conventional)** | Photo/video grouped bubbles (up to 10 items) | ❌ **NOT Supported** by Telegram API | Simple photo batches where NO buttons are needed |
+| **`@grammyjs/format`** | Type-safe templating without manual escaping | ✅ via `reply_markup: InlineKeyboard` | Safe dynamic text rendering in classic messages |
 
 ---
 
 ## 2. HTML Parse Mode (`parse_mode: "HTML"`)
 
-HTML is the official gold standard for stable Telegram bots.
+HTML remains the standard for classic Telegram text replies.
 
-### Supported HTML Tags
+### Supported HTML Tags (Classic)
 
 | Tag | Purpose | Example |
 | :--- | :--- | :--- |
@@ -68,8 +76,6 @@ HTML is the official gold standard for stable Telegram bots.
 
 ### Safe HTML Escaping Utility
 
-When interpolating dynamic user input or database results into HTML templates, always escape special characters:
-
 ```typescript
 export function escapeHtml(text: string): string {
   return text
@@ -77,10 +83,6 @@ export function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
-
-// Usage:
-const safeUser = escapeHtml(ctx.from?.first_name ?? "User");
-await ctx.reply(`Hello, <b>${safeUser}</b>!`, { parse_mode: "HTML" });
 ```
 
 ### Link Preview Control (`link_preview_options`)
@@ -89,37 +91,283 @@ await ctx.reply(`Hello, <b>${safeUser}</b>!`, { parse_mode: "HTML" });
 await ctx.reply(`Check our guide: <a href="https://grammy.dev">grammY Docs</a>`, {
   parse_mode: "HTML",
   link_preview_options: {
-    is_disabled: false,        // false = show preview; true = disable completely
-    prefer_small_media: true,  // Display compact thumbnail banner
-    show_above_text: false,    // Preview below text
+    is_disabled: false,
+    prefer_small_media: true,
+    show_above_text: false,
   },
 });
 ```
 
 ---
 
-## 3. Bot API 10.1–10.3 Rich Messages & Blocks
+## 3. Telegram Bot API 10.1–10.3 Rich Messages & Formatting
 
-Telegram Bot API 10.1 through 10.3 introduced native **Rich Messages** (`InputRichMessage`) allowing advanced block layout structures directly:
+Telegram Bot API 10.1–10.3 allows bots to construct rich interactive documents using `sendRichMessage` and `sendRichMessageDraft`.
 
-### Features Introduced:
-1. **Rich Message Payloads (`InputRichMessage`):**
-   - Supports explicit `html`, `markdown`, or `blocks` format.
-   - Blocks include: `InputRichBlockParagraph`, `InputRichBlockList`, `InputRichBlockMathematicalExpression`, `RichBlockExpandableBlockQuotation`, `RichBlockDocument`.
-2. **Compact Tables (Bot API 10.3):**
-   - Table layouts support the `is_compact: true` parameter for sleek inline rendering.
-3. **Rich Message Buttons:**
-   - Dedicated buttons (`RichMessageButton`, `RichTextButton`, `RichBlockButtons`) that integrate directly with structured rich content and guest query flows.
-4. **Ephemeral Message Parameters (`EphemeralMessageParameters`):**
-   - Enables temporary user-targeted messages without public clutter.
+### Overview & Limits
+- **Length limit:** Up to **32,768 UTF-8 characters** in the rich message text.
+- **Block limit:** Up to **500 blocks** (nested blocks, list items, table rows, details, quotes).
+- **Nesting limit:** Up to **16 levels** of nested formatting.
+- **Media attachments:** Up to **50 media attachments** in total.
+- **Table width:** Up to **20 columns** in a table.
 
 ---
 
-## 4. Type-Safe Formatting Plugins
+### Rich Markdown Style Reference
+
+Pass the markdown payload in `rich_message: { markdown: "..." }`.
+
+```markdown
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+
+Paragraph text with **bold**, _italic_, ~~strikethrough~~, `code`, ==marked text==, and ||spoiler||.
+
+[inline URL](https://t.me/)
+[inline e-mail](mailto:user@example.com)
+[inline phone](tel:+123456789)
+[inline mention](tg://user?id=123456789)
+![👍](tg://emoji?id=5368324170671202286)
+![22:45 tomorrow](tg://time?unix=1647531900&format=wDT)
+$x^2 + y^2$
+
+```python
+print("Preformatted code block")
+```
+
+---
+
+- unordered list item 1
+- unordered list item 2
+
+1. ordered list item 1
+2. ordered list item 2
+
+- [ ] task list unchecked
+- [x] completed task list item
+
+> Block quotation line 1
+> Block quotation line 2
+
+| Header 1 | Header 2 |
+|:---------|:--------:|
+| left     | center   |
+
+Text with a reference[^note1].
+
+[^note1]: Definition of the footnote.
+
+$$E = mc^2$$
+
+<details open><summary>Expandable Details with **Markdown**</summary>
+
+- Item A
+- Item B with ||hidden secret||
+
+</details>
+
+<tg-slideshow>
+
+![](https://example.com/photo1.jpg "Slide 1 Caption")
+![](https://example.com/photo2.jpg "Slide 2 Caption")
+
+</tg-slideshow>
+
+<tg-collage>
+
+![](https://example.com/item1.jpg)
+![](https://example.com/item2.jpg)
+
+</tg-collage>
+```
+
+---
+
+### Rich HTML Style Reference
+
+Pass the HTML payload in `rich_message: { html: "..." }`.
+
+```html
+<h1>Heading 1</h1>
+<h2>Heading 2</h2>
+<h3>Heading 3</h3>
+
+<p>Paragraph with <b>bold</b>, <i>italic</i>, <u>underlined</u>, <s>strikethrough</s>, <mark>marked</mark>, <tg-spoiler>spoiler</tg-spoiler>, <code>code</code>, <sub>subscript</sub>, <sup>superscript</sup>.</p>
+
+<p>Custom emoji: <tg-emoji emoji-id="5368324170671202286">👍</tg-emoji></p>
+<p>Time entity: <tg-time unix="1647531900" format="wDT">22:45 tomorrow</tg-time></p>
+<tg-math-block>E = mc^2</tg-math-block>
+
+<hr/>
+
+<ul>
+  <li>Unordered item</li>
+  <li><input type="checkbox" checked> Completed task</li>
+  <li><input type="checkbox"> Pending task</li>
+</ul>
+
+<ol start="1" type="1">
+  <li>Ordered item 1</li>
+  <li>Ordered item 2</li>
+</ol>
+
+<blockquote>Standard blockquote<cite>Author</cite></blockquote>
+<blockquote expandable>Expandable quote content<cite>Author</cite></blockquote>
+<aside>Pull quote text<cite>Author</cite></aside>
+
+<details open>
+  <summary>Collapsible Section Title</summary>
+  <p>Detailed body content rendered cleanly inside Telegram.</p>
+</details>
+
+<tg-map lat="41.9028" long="12.4964" zoom="14"/>
+
+<table bordered striped compact>
+  <caption>Financial Summary</caption>
+  <tr><th>Asset</th><th>Allocation</th><th>Return</th></tr>
+  <tr><td>BTC</td><td>40%</td><td>+12.4%</td></tr>
+  <tr><td>ETH</td><td>30%</td><td>+8.1%</td></tr>
+  <tr><td>SOL</td><td>30%</td><td>+24.5%</td></tr>
+</table>
+
+<!-- Media & Albums -->
+<figure>
+  <img src="https://example.com/photo.jpg" tg-spoiler/>
+  <figcaption>Cover photo <cite>Photo credit</cite></figcaption>
+</figure>
+
+<tg-slideshow>
+  <img src="https://example.com/photo1.jpg"/>
+  <video src="https://example.com/video1.mp4"></video>
+  <figcaption>Slideshow album caption <cite>Photographer</cite></figcaption>
+</tg-slideshow>
+
+<tg-collage>
+  <img src="https://example.com/item1.jpg"/>
+  <img src="https://example.com/item2.jpg"/>
+  <figcaption>Collage gallery</figcaption>
+</tg-collage>
+
+<!-- Embedded Interactive Buttons -->
+<tg-button-row align="center">
+  <tg-button type="callback_data" style="primary" data="album:prev">◀️ Prev</tg-button>
+  <tg-button type="callback_data" style="primary" data="album:next">Next ▶️</tg-button>
+</tg-button-row>
+<tg-button-row align="center">
+  <tg-button type="url" style="success" url="https://example.com">🌐 View Full Gallery</tg-button>
+</tg-button-row>
+```
+
+---
+
+### Embedded Buttons (`<tg-button>` & `<tg-button-row>`)
+
+Rich messages support embedding buttons **directly into the HTML/Markdown layout** without needing external keyboard structures.
+
+#### Supported Button Attributes:
+- `type`:
+  - `"url"`: Opens URL (`url="https://..."` or `url="tg://user?id=..."`).
+  - `"callback_data"`: Emits callback query update (`data="callback_payload"`).
+  - `"web_app"`: Opens Telegram Mini App (`url="https://..."`, private chats only).
+  - `"copy_text"`: Copies text to user clipboard (`text="copied content"`).
+  - `"switch_inline_query"`: Opens inline query picker (`query="..."`).
+  - `"switch_inline_query_current_chat"`: Inline query in current chat (`query="..."`).
+  - `"switch_inline_query_chosen_chat"`: Inline query in chosen chat with filters.
+  - `"login_url"`: Telegram authorization widget.
+  - `"disabled"`: Visual non-clickable button state.
+- `style`: `"primary"` (bold accent), `"success"` (green), `"danger"` (red), `"link"` (text link style).
+- `<tg-button-row align="left|center|right">`: Groups buttons horizontally with alignment control.
+
+---
+
+### Streaming AI Drafts & Thinking Block (`<tg-thinking>`)
+
+For LLMs and streaming AI responses, Bot API 10.1–10.3 provides `sendRichMessageDraft`:
+- Ephemeral 30-second animated live stream.
+- Supports `<tg-thinking>Thinking through reasoning steps...</tg-thinking>`.
+- Allows `can_stop: true` to display a user "Stop Generation" button.
+
+```typescript
+// Stream partial reasoning draft
+await ctx.api.raw.sendRichMessageDraft({
+  chat_id: ctx.chat.id,
+  draft_id: 101,
+  can_stop: true,
+  rich_message: {
+    html: `<tg-thinking>Analyzing query and querying vector database...</tg-thinking>`,
+  },
+});
+```
+
+---
+
+## 4. Media Albums: Conventional `sendMediaGroup` vs Rich `<tg-slideshow>` / `<tg-collage>`
+
+### The Critical Difference: Buttons on Media Albums
+
+> [!IMPORTANT]
+> **Why `sendMediaGroup` Fails for Albums With Buttons:**  
+> In Telegram Bot API, the `sendMediaGroup` method **strictly forbids attaching inline keyboards** (`reply_markup`). Calling `sendMediaGroup` with an `InlineKeyboard` causes Telegram API error: `400: Bad Request: reply_markup is not supported in sendMediaGroup`.
+
+### When to Use What
+
+| Requirement | Conventional `sendMediaGroup` | Rich `<tg-slideshow>` / `<tg-collage>` |
+| :--- | :--- | :--- |
+| **Media Album WITHOUT buttons** | ✅ Good for simple static photo batches | ✅ Also supported |
+| **Media Album WITH buttons / interactive UI** | ❌ **IMPOSSIBLE** (API rejection) | ✅ **RECOMMENDED SOLUTION** (`sendRichMessage`) |
+| **Swipeable Carousel / Slideshow UI** | ❌ Displays as separate grouped bubble grid | ✅ **Native swiper / slideshow presentation** |
+| **Collage presentation** | ❌ Default static tile group | ✅ **`<tg-collage>` native tile collage** |
+| **Rich Captions with Headings, Tables, Spoilers** | ❌ Limited to single string caption | ✅ **Full rich HTML/Markdown structure** |
+
+---
+
+### Attaching Local & Remote Files via `tg://...` Links
+
+Rich message tags (`<img src="...">`, `<video src="...">`, `![](...)`) support:
+1. **Remote HTTPS URLs:** Directly reference any public image/video URL.
+2. **Local Uploaded Files / File IDs:** Use the `tg://photo?id=IDENTIFIER` syntax and map them in the `media` array using grammY `InputFile`.
+
+```typescript
+import { InputFile } from "grammy";
+
+await ctx.api.raw.sendRichMessage({
+  chat_id: ctx.chat.id,
+  rich_message: {
+    html: `
+      <h2>📸 Product Showcase</h2>
+      <tg-slideshow>
+        <img src="tg://photo?id=slide1" />
+        <img src="tg://photo?id=slide2" />
+        <figcaption>Explore our latest spring collection</figcaption>
+      </tg-slideshow>
+      <tg-button-row align="center">
+        <tg-button type="callback_data" style="primary" data="buy:collection">🛍️ Order Now</tg-button>
+        <tg-button type="url" url="https://shop.example.com">🌐 Website</tg-button>
+      </tg-button-row>
+    `,
+    media: [
+      {
+        id: "slide1",
+        media: { type: "photo", media: new InputFile("./assets/slide1.jpg") },
+      },
+      {
+        id: "slide2",
+        media: { type: "photo", media: new InputFile("./assets/slide2.jpg") },
+      },
+    ],
+  },
+});
+```
+
+---
+
+## 5. Type-Safe Formatting Plugins
 
 ### `@grammyjs/format` (JSX-like Builder)
-
-`@grammyjs/format` eliminates escaping errors completely by constructing `entities` programmatically:
 
 ```typescript
 import { fmt, bold, italic, code, link, spoiler } from "@grammyjs/format";
@@ -140,8 +388,6 @@ Read more at ${link("Official Guide", "https://grammy.dev")}`;
 
 ### `@grammyjs/parse-mode` (Hydrated Reply Shortcuts)
 
-Adds convenient methods like `ctx.replyWithHTML` to `Context`:
-
 ```typescript
 import { hydrateReply, parseMode } from "@grammyjs/parse-mode";
 import type { ParseModeFlavor } from "@grammyjs/parse-mode";
@@ -149,27 +395,34 @@ import type { ParseModeFlavor } from "@grammyjs/parse-mode";
 type MyContext = ParseModeFlavor<Context>;
 const bot = new Bot<MyContext>("BOT_TOKEN");
 
-// 1. Install transformer to set default parse mode
 bot.api.config.use(parseMode("HTML"));
-
-// 2. Install context hydration
 bot.use(hydrateReply);
 
 bot.command("start", async (ctx) => {
-  // Directly sends with HTML parse mode
   await ctx.replyWithHTML("<b>Welcome</b> to our bot!");
 });
 ```
 
 ---
 
-## 5. Rendering Markdown Tables & Dashboards in Telegram
+## 6. Monospace Tables vs Native Rich Tables
 
-Because Telegram Bot API does not render GUI markdown tables natively, production bots use two proven layout techniques:
+### A. Native Rich Table (`<table>` / Markdown Table)
 
-### A. Monospace ASCII `<pre>` Code Block (Recommended)
+Use when sending via `sendRichMessage`:
 
-Render neatly aligned tables inside `<pre>` blocks:
+```html
+<table bordered striped compact>
+  <caption>Monthly Server Costs</caption>
+  <tr><th>Region</th><th>Instances</th><th>Cost</th></tr>
+  <tr><td>US-East</td><td>4</td><td>$160.00</td></tr>
+  <tr><td>EU-Central</td><td>2</td><td>$80.00</td></tr>
+</table>
+```
+
+### B. Monospace ASCII `<pre>` Code Block (Classic fallback)
+
+Use when sending standard `ctx.reply` with `parse_mode: "HTML"`:
 
 ```typescript
 export function formatMonospaceTable(headers: string[], rows: string[][]): string {
@@ -190,130 +443,26 @@ export function formatMonospaceTable(headers: string[], rows: string[][]): strin
     "</pre>",
   ].join("\n");
 }
-
-// Example Output:
-// Component │ Status │ Latency
-// ──────────┼────────┼────────
-// Gateway   │ 🟢 Up  │ 12ms
-// Database  │ 🟢 Up  │ 2ms
-```
-
-### B. Clean Key-Value Card Layout
-
-For mobile readability, format cards with bold headers and emoji bullets:
-
-```typescript
-const dashboardCard = [
-  "<b>📊 Infrastructure Metrics</b>",
-  "",
-  "<b>⚙️ Runtime</b>",
-  "• Node: <code>v22.12.0</code>",
-  "• Mode: <code>Polling / Runner</code>",
-  "• Uptime: <code>14h 22m</code>",
-  "",
-  "<b>💾 Memory & Storage</b>",
-  "• Heap: <code>42.1 MB / 512 MB</code>",
-  "• Redis: 🟢 <code>Connected</code>",
-  "",
-  "<b>Status:</b> 🟢 <i>All services operational</i>",
-].join("\n");
-
-await ctx.reply(dashboardCard, { parse_mode: "HTML" });
 ```
 
 ---
 
-## 6. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle
-
-### Button Types & Grid Layout
+## 7. Inline Keyboards (`InlineKeyboard`) & Callback Lifecycle
 
 ```typescript
 import { InlineKeyboard } from "grammy";
 
 const keyboard = new InlineKeyboard()
-  // URL Button
   .url("📖 Docs", "https://grammy.dev")
-  // Callback Button
   .text("🔄 Refresh", "stats:refresh")
-  .row() // New row
-  // Mini App Button
+  .row()
   .webApp("🚀 Open App", "https://app.example.com")
-  // Copy to Clipboard Button
   .copyText("📋 Copy Code", "INVITE-2026-X");
-```
 
-### Dismissing Loading Spinners with `answerCallbackQuery`
-
-> [!IMPORTANT]
-> Always call `await ctx.answerCallbackQuery()` inside callback query handlers to dismiss the Telegram client loading indicator and prevent timeout errors.
-
-```typescript
 bot.callbackQuery("stats:refresh", async (ctx) => {
-  // 1. Immediately acknowledge callback query
-  await ctx.answerCallbackQuery({
-    text: "Refreshing metrics...",
-    show_alert: false, // false = toast banner; true = modal popup
-  });
-
-  // 2. Edit existing message in-place
-  await ctx.editMessageText(getUpdatedDashboardHtml(), {
-    parse_mode: "HTML",
-    reply_markup: createDashboardKeyboard(),
-  });
-});
-```
-
----
-
-## 7. Live Streaming & Ephemeral Progress (The Real Way)
-
-To provide real-time feedback during long-running tasks or AI token generation in Telegram:
-
-### Chat Action Typing Indicator
-```typescript
-// Tells the user the bot is typing (lasts 5 seconds or until message is sent)
-await ctx.replyWithChatAction("typing");
-```
-
-### AI / LLM Token Streaming via Throttled `editMessageText`
-
-Telegram rate-limits rapid message editing (~1 edit per second per chat). Throttle editing updates to **800ms–1500ms**:
-
-```typescript
-bot.command("ask", async (ctx) => {
-  const prompt = ctx.match;
-  if (!prompt) return ctx.reply("Please provide a prompt.");
-
-  await ctx.replyWithChatAction("typing");
-  
-  // 1. Send placeholder message
-  const msg = await ctx.reply("<i>Synthesizing answer...</i>", { parse_mode: "HTML" });
-
-  let buffer = "";
-  let lastEditTime = 0;
-  const EDIT_INTERVAL_MS = 1000;
-
-  try {
-    for await (const chunk of fakeAiStream(prompt)) {
-      buffer += chunk;
-      const now = Date.now();
-
-      // 2. Throttled in-place message edit
-      if (now - lastEditTime > EDIT_INTERVAL_MS) {
-        lastEditTime = now;
-        await ctx.api.editMessageText(ctx.chat.id, msg.message_id, buffer, {
-          parse_mode: "HTML",
-        }).catch(() => {}); // Catch flood/same content errors safely
-      }
-    }
-
-    // 3. Final edit with complete response
-    await ctx.api.editMessageText(ctx.chat.id, msg.message_id, buffer, {
-      parse_mode: "HTML",
-    });
-  } catch (err) {
-    console.error("Stream error:", err);
-  }
+  // Always answer immediately to clear loading state
+  await ctx.answerCallbackQuery({ text: "Refreshed!" });
+  // Update UI...
 });
 ```
 
@@ -321,50 +470,250 @@ bot.command("ask", async (ctx) => {
 
 ## 8. Production Implementation Recipes
 
-### Recipe A: Interactive Infrastructure Dashboard Card
+### Recipe A: Media Album / Slideshow with Interactive Buttons (Remote URLs)
 
 ```typescript
-import { Composer, Context, InlineKeyboard } from "grammy";
+import { Composer, Context } from "grammy";
 
-export type MyContext = Context;
-export const dashboardFeature = new Composer<MyContext>();
+export const mediaAlbumFeature = new Composer<Context>();
 
-function renderDashboard(): string {
-  const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-  const memory = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+mediaAlbumFeature.command("gallery", async (ctx) => {
+  const slideshowMarkdown = `
+# 🌄 Scenic Mountain Expedition
+Swipe through our high-altitude highlights from the Alps expedition:
 
-  return [
-    "<b>🖥️ Server Infrastructure Dashboard</b>",
-    "",
-    "<b>⚡ Health & Performance</b>",
-    "• Gateway: 🟢 <code>Operational (8ms)</code>",
-    "• Database: 🟢 <code>Connected (2ms)</code>",
-    `• Heap Usage: <code>${memory} MB</code>`,
-    "",
-    `<b>Last Updated:</b> <code>${timestamp} UTC</code>`,
-  ].join("\n");
-}
+<tg-slideshow>
 
-function dashboardKeyboard(): InlineKeyboard {
-  return new InlineKeyboard()
-    .text("🔄 Refresh", "dash:refresh")
-    .url("📈 Grafana", "https://grafana.internal");
-}
+![](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b "Summit Panorama")
+![](https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99 "Alpine Lake Trail")
+![](https://images.unsplash.com/photo-1506744038136-46273834b3fb "Sunset Valley")
 
-dashboardFeature.command("status", async (ctx) => {
-  await ctx.reply(renderDashboard(), {
-    parse_mode: "HTML",
-    reply_markup: dashboardKeyboard(),
+</tg-slideshow>
+
+<tg-button-row align="center">
+  <tg-button type="callback_data" style="primary" data="gallery:details">📋 Trail Info</tg-button>
+  <tg-button type="callback_data" style="success" data="gallery:book">🎟️ Book Tour</tg-button>
+</tg-button-row>
+<tg-button-row align="center">
+  <tg-button type="url" url="https://t.me/example_channel">📢 Join Channel</tg-button>
+</tg-button-row>
+`;
+
+  await ctx.api.raw.sendRichMessage({
+    chat_id: ctx.chat.id,
+    rich_message: {
+      markdown: slideshowMarkdown,
+    },
   });
 });
 
-dashboardFeature.callbackQuery("dash:refresh", async (ctx) => {
-  await ctx.answerCallbackQuery({ text: "Dashboard updated!" });
-  
-  await ctx.editMessageText(renderDashboard(), {
-    parse_mode: "HTML",
-    reply_markup: dashboardKeyboard(),
-  }).catch(() => {});
+mediaAlbumFeature.callbackQuery("gallery:details", async (ctx) => {
+  await ctx.answerCallbackQuery({
+    text: "Elevation: 3,842m | Difficulty: Moderate | Duration: 4 Days",
+    show_alert: true,
+  });
 });
+
+mediaAlbumFeature.callbackQuery("gallery:book", async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Opening booking form..." });
+  await ctx.reply("🎫 Visit our booking portal at: https://example.com/tours");
+});
+```
+
+---
+
+### Recipe B: Rich Media Slideshow with Local File Uploads (`InputFile`)
+
+```typescript
+import { Composer, Context, InputFile } from "grammy";
+import * as path from "path";
+
+export const localAlbumFeature = new Composer<Context>();
+
+localAlbumFeature.command("catalog", async (ctx) => {
+  const htmlSlideshow = `
+<h2>👗 New Season Catalog</h2>
+<p>Swipe through items and tap to inspect details:</p>
+
+<tg-slideshow>
+  <img src="tg://photo?id=item1" />
+  <img src="tg://photo?id=item2" />
+  <figcaption>Spring / Summer Designer Collection</figcaption>
+</tg-slideshow>
+
+<tg-button-row align="center">
+  <tg-button type="callback_data" style="primary" data="item:1:info">🔍 Item 1</tg-button>
+  <tg-button type="callback_data" style="primary" data="item:2:info">🔍 Item 2</tg-button>
+</tg-button-row>
+<tg-button-row align="center">
+  <tg-button type="copy_text" text="SUMMER-2026-DISCOUNT">🎁 Copy Coupon</tg-button>
+</tg-button-row>
+`;
+
+  await ctx.api.raw.sendRichMessage({
+    chat_id: ctx.chat.id,
+    rich_message: {
+      html: htmlSlideshow,
+      media: [
+        {
+          id: "item1",
+          media: {
+            type: "photo",
+            media: new InputFile(path.resolve("./assets/item1.jpg")),
+          },
+        },
+        {
+          id: "item2",
+          media: {
+            type: "photo",
+            media: new InputFile(path.resolve("./assets/item2.jpg")),
+          },
+        },
+      ],
+    },
+  });
+});
+```
+
+---
+
+### Recipe C: Interactive Collage Card with Action Row
+
+```typescript
+import { Composer, Context } from "grammy";
+
+export const collageFeature = new Composer<Context>();
+
+collageFeature.command("collage", async (ctx) => {
+  const htmlContent = `
+<h2>🎨 Featured Artwork Showcase</h2>
+<p>Curated weekly picks from community artists:</p>
+
+<tg-collage>
+  <img src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119" />
+  <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675" />
+  <figcaption>Weekly Spotlight • Curated by ArtBot</figcaption>
+</tg-collage>
+
+<tg-button-row align="center">
+  <tg-button type="callback_data" style="success" data="art:vote:1">❤️ Vote #1</tg-button>
+  <tg-button type="callback_data" style="success" data="art:vote:2">❤️ Vote #2</tg-button>
+</tg-button-row>
+`;
+
+  await ctx.api.raw.sendRichMessage({
+    chat_id: ctx.chat.id,
+    rich_message: {
+      html: htmlContent,
+    },
+  });
+});
+```
+
+---
+
+### Recipe D: Full Rich Markdown Report with Nested Details, Math & Footnotes
+
+```typescript
+import { Composer, Context } from "grammy";
+
+export const reportFeature = new Composer<Context>();
+
+reportFeature.command("report", async (ctx) => {
+  const markdownReport = `
+# 📈 System Architecture & Health Report
+Generated on: ![Now](tg://time?unix=${Math.floor(Date.now() / 1000)}&format=wDT)
+
+## 📊 Core Performance Metrics
+
+| Service | Status | Latency | SLA |
+|:--------|:------:|--------:|:---:|
+| API Gateway | 🟢 Up | \`14ms\` | 99.9% |
+| DB Cluster | 🟢 Up | \`3ms\` | 99.99% |
+| Cache Store | 🟢 Up | \`1ms\` | 100% |
+
+### 🔬 Theoretical Max Throughput
+Calculated via Little's Law:
+$$L = \\lambda W$$
+
+<details open><summary>📋 <b>Active Maintenance Checklist</b></summary>
+
+- [x] Rotate Redis authentication tokens
+- [x] SSL certificate auto-renew verified
+- [ ] Purge temporary export snapshots
+
+</details>
+
+For more architecture details, consult our specification[^spec].
+
+[^spec]: Internal RFC-2026: Distributed Message Queue and Sharding Strategy.
+
+<tg-button-row align="center">
+  <tg-button type="callback_data" style="primary" data="report:refresh">🔄 Refresh</tg-button>
+  <tg-button type="url" style="link" url="https://status.internal">🌐 Live Dashboard</tg-button>
+</tg-button-row>
+`;
+
+  await ctx.api.raw.sendRichMessage({
+    chat_id: ctx.chat.id,
+    rich_message: {
+      markdown: markdownReport,
+    },
+  });
+});
+```
+
+---
+
+### Recipe E: Real-Time AI Streaming with Drafts & Thinking Block
+
+```typescript
+import { Composer, Context } from "grammy";
+
+export const aiFeature = new Composer<Context>();
+
+aiFeature.command("ask", async (ctx) => {
+  const query = ctx.match;
+  if (!query) return ctx.reply("Please enter a question.");
+
+  const draftId = Math.floor(Math.random() * 1000000) + 1;
+
+  // 1. Send live thinking draft
+  await ctx.api.raw.sendRichMessageDraft({
+    chat_id: ctx.chat.id,
+    draft_id: draftId,
+    can_stop: true,
+    rich_message: {
+      html: `
+        <h3>🤖 AI Reasoning</h3>
+        <tg-thinking>Formulating solution and validating constraints...</tg-thinking>
+      `,
+    },
+  });
+
+  // Simulate inference delay
+  await new Promise((r) => setTimeout(r, 1200));
+
+  // 2. Send finalized rich response
+  await ctx.api.raw.sendRichMessage({
+    chat_id: ctx.chat.id,
+    rich_message: {
+      html: `
+        <h3>💡 Solution for: <i>${escapeHtml(query)}</i></h3>
+        <p>Here is the structured solution:</p>
+        <pre><code class="language-typescript">export function solve() {\n  return "Optimized Output";\n}</code></pre>
+        <blockquote expandable>Key Insight: Time complexity reduced to O(log n).</blockquote>
+        <tg-button-row align="center">
+          <tg-button type="copy_text" text="export function solve() { return 'Optimized Output'; }">📋 Copy Code</tg-button>
+          <tg-button type="callback_data" style="link" data="ai:feedback">👍 Helpful</tg-button>
+        </tg-button-row>
+      `,
+    },
+  });
+});
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 ```
 

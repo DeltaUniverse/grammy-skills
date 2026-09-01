@@ -1,0 +1,15 @@
+{
+  "name": "rich-slideshow-bot",
+  "version": "1.0.0",
+  "description": "Telegram Rich Message, Media Slideshow (<tg-slideshow>), and Inline Buttons bot example using grammY",
+  "main": "bot.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.mjs",
+    "test": "node test-simulation.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "grammy": "^1.46.0"
+  }
+}

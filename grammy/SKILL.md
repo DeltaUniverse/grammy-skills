@@ -37,6 +37,9 @@ This skill guides AI coding agents in designing, building, and deploying robust 
    - For real-time progress / AI responses, send `ctx.replyWithChatAction("typing")` and throttle in-place edits (`ctx.api.editMessageText`) to ~1 second.
    - Encapsulate rich features in a `Composer<MyContext>` along with their `InlineKeyboard` layouts and `composer.callbackQuery()` listeners.
    - Always call `await ctx.answerCallbackQuery()` immediately in callback query listeners to clear the client loading spinner and prevent timeouts.
+8. **Media Albums with Buttons Discipline:**
+   - **Golden Rule:** Conventional `sendMediaGroup` in Telegram Bot API **strictly prohibits** inline keyboards / buttons (`reply_markup`).
+   - When a user asks for a media album, gallery, or multi-media upload **with buttons**, ALWAYS use **Rich Messages** (`<tg-slideshow>` for swipeable carousels or `<tg-collage>` for grid collages) sent via `ctx.api.raw.sendRichMessage({ rich_message: { markdown | html, media: [...] } })` with embedded `<tg-button>` / `<tg-button-row>`.
 
 ---
 
@@ -95,7 +98,7 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 | :--- | :--- |
 | [`core.md`](references/core.md) | `Bot` class options, `Context` shortcuts (`ctx.reply`, `ctx.replyWithPhoto`), context flavors, `Composer` branching, filter queries (`bot.on`), `InputFile`, `reply_parameters`, HTML formatting |
 | [`guest-messages.md`](references/guest-messages.md) | Bot API 10.0–10.3 Guest Bot Mode, `guest_message` updates, `ctx.answerGuestQuery()`, `guest_query_id`, `@BotFather` setup, non-member chat interactions |
-| [`rich-messages.md`](references/rich-messages.md) | HTML formatting, Bot API 10.1–10.3 Rich Blocks (`InputRichMessage`), compact tables, `@grammyjs/format`, `@grammyjs/parse-mode`, AI streaming via `editMessageText`, `InlineKeyboard` builders, `answerCallbackQuery` lifecycle |
+| [`rich-messages.md`](references/rich-messages.md) | Rich Markdown & HTML Style, Bot API 10.1–10.3 Rich Messages (`InputRichMessage`), `<tg-slideshow>` / `<tg-collage>` media albums with embedded buttons (`<tg-button>`), local file uploads, compact tables, AI drafts (`sendRichMessageDraft`) & `<tg-thinking>` |
 | [`sessions.md`](references/sessions.md) | Built-in `session()`, `initial` factory, `SessionFlavor`, storage adapters (SQLite, Redis, Supabase, Free), multi-sessions, `lazySession`, `enhanceStorage` |
 | [`conversations.md`](references/conversations.md) | `@grammyjs/conversations`, replay engine mechanics, 3 golden rules, `conversation.wait()`, `waitFor`, `conversation.external()`, `conversation.form` |
 | [`keyboards.md`](references/keyboards.md) | Built-in `InlineKeyboard`, custom `Keyboard`, callback handling, `@grammyjs/menu` plugin, `MenuRange`, submenus and back buttons |
