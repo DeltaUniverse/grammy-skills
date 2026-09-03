@@ -21,6 +21,14 @@ This skill guides AI coding agents in designing, building, and deploying robust 
 
 ---
 
+> [!IMPORTANT]
+> **Check Existing Solutions First:**  
+> Before writing a custom implementation for a feature, check whether a battle-tested package/plugin already exists in the grammY ecosystem (npm, awesome-grammY, GitHub). If a strong match exists:
+> - If the underlying logic is portable (queue, storage interface, rate-limiting strategy) but the package itself isn't runtime-compatible (e.g. depends on ioredis, Node-only APIs) $\rightarrow$ extract the *pattern* into `references/` (see [`references/broadcast.md`](references/broadcast.md) as the template for this).
+> - If the package is genuinely compatible with our serverless runtime (Workers/Deno, no Node-only dependencies) $\rightarrow$ install and use it directly as a dependency instead of reimplementing it.
+>
+> Don't reinvent a well-tested solution that already fits our constraints.
+
 ## 2. Lazy Senior Principles
 
 1. **Type-First Context Modeling:** Declare custom context types using additive flavors in v1 (`type MyContext = Context & SessionFlavor<SessionData>`) or transformative generic wrappers in v2 (`type MyContext = SessionFlavor<Context, SessionData>`). Pass `MyContext` to `Bot`, `Composer`, and `Menu` generic parameters.
@@ -108,6 +116,8 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 | [`hosting.md`](references/hosting.md) | VPS hosting (systemd, PM2, Caddy), Deno Deploy, Cloudflare Workers, Supabase Functions, Fly.io, Vercel |
 | [`v2-migration.md`](references/v2-migration.md) | grammY 2.0 breaking changes, `ctx.reply*` $\rightarrow$ `ctx.send*` renamings, `SendData` object, transformative flavors, JSR installation |
 | [`broadcast.md`](references/broadcast.md) | Queue-based broadcast state machine (`pending` $\rightarrow$ `running` $\rightarrow$ `paused`/`stopped`), KV storage interface for Cloudflare/Deno, chunked sending, auto-throttle on 429 errors, progress report formatting, `onUserRestricted` callback |
+| [`typescript-patterns.md`](references/typescript-patterns.md) | Strict TS conventions, dependency injection (DI) pattern, `Result<T, E>` error handling, dependency version pre-flight check (`npm view <pkg> version`) |
+| [`serverless-patterns.md`](references/serverless-patterns.md) | Workers/Deno Deploy runtime constraints, portable KV storage abstraction, cold start optimizations, Hono webhook integration patterns |
 
 ---
 
