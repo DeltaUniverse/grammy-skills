@@ -1,6 +1,6 @@
 {
-  "verified_version": "1.46.0",
-  "last_verified": "2026-08-29",
+  "verified_version": "1.46.0 / v2.0.0-beta.x",
+  "last_verified": "2026-09-03",
   "sources": [
     "https://github.com/grammyjs/grammY/releases",
     "https://core.telegram.org/bots/api#recent-changes",
@@ -30,6 +30,8 @@
     "https://grammy.dev/hosting/fly",
     "https://grammy.dev/hosting/vercel",
     "https://v2.grammy.dev",
-    "https://jsr.io/@grammyjs/grammy/doc"
+    "https://jsr.io/@grammyjs/grammy/doc",
+    "https://github.com/grammyjs/types",
+    "https://github.com/smaznet/grammy-broadcast"
   ]
 }

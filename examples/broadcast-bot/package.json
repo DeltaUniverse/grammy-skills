@@ -1,0 +1,13 @@
+{
+  "name": "broadcast-bot",
+  "version": "1.0.0",
+  "description": "High-performance KV-backed broadcast queue bot example with rate limit auto-throttling and user cleanup",
+  "type": "module",
+  "main": "src/broadcast.js",
+  "scripts": {
+    "test": "node test-simulation.mjs"
+  },
+  "dependencies": {
+    "grammy": "^1.46.0"
+  }
+}

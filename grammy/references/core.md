@@ -83,10 +83,11 @@ Every middleware receives a `Context` instance (`ctx`) containing the current up
 - `ctx.answerCallbackQuery(options)`: Responds to an incoming callback query.
 - `ctx.answerGuestQuery(result)`: Responds to an incoming guest query (Bot API 10.0+).
 - `ctx.editMessageText(text, options)`: Edits the text of the message associated with `ctx`.
+- `ctx.editEphemeralMessageText(text, options)`: Edits the text of an ephemeral message (Bot API 10.2+).
 - `ctx.deleteMessage()`: Deletes the message associated with `ctx`.
 
 > [!NOTE]
-> **grammY 2.0 Roadmap:** In grammY 2.0, `ctx.reply*` shortcuts are renamed to `ctx.send*` (e.g. `ctx.reply` $\rightarrow$ `ctx.send`, `ctx.replyWithPhoto` $\rightarrow$ `ctx.sendPhoto`, `ctx.replyWithVideo` $\rightarrow$ `ctx.sendVideo`). See [`v2-migration.md`](v2-migration.md) for details.
+> **grammY 2.0 Shortcuts:** In grammY 2.0 (`http://v2.grammy.dev`), context sending shortcuts use `ctx.send*` (e.g. `ctx.send(text)`, `ctx.sendPhoto(photo)`, `ctx.sendVideo(video)`, `ctx.sendRichMessage(rich)`). Both `ctx.reply*` and `ctx.send*` are fully documented across this skill. See [`v2-migration.md`](v2-migration.md) for full details.
 
 ---
 

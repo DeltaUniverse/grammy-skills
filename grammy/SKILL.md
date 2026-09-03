@@ -1,20 +1,21 @@
 ---
 name: grammy
-description: Comprehensive expert skill for building Telegram Bots using grammY (v1.46.0) with TypeScript/JavaScript. Covers core architecture, context flavors, sessions, multi-step conversations, interactive keyboards/menus, guest messages & Bot API 10.0–10.3 features, rich formatting (HTML, @grammyjs/format, @grammyjs/parse-mode, tables), error handling, runners, and multi-platform deployments (VPS, Edge, Serverless).
-verified_version: 1.46.0
-last_verified: 2026-08-29
+description: Comprehensive expert skill for building Telegram Bots using grammY (v1.46.0 stable & v2.0.0 major update via v2.grammy.dev) with TypeScript/JavaScript. Covers core architecture, context flavors (additive & v2 transformative), sessions, multi-step conversations, interactive keyboards/menus, guest messages & Bot API 10.0–10.3 features, rich formatting (HTML, @grammyjs/format, @grammyjs/parse-mode, tables), error handling, runners, and multi-platform deployments (VPS, Edge, Serverless).
+verified_version: 2.0.0-beta.x / 1.46.0
+last_verified: 2026-09-03
 ---
 
 # grammY Telegram Bot Development Skill
 
-This skill guides AI coding agents in designing, building, and deploying robust Telegram bots using the **grammY** framework (`v1.46.0`).
+This skill guides AI coding agents in designing, building, and deploying robust Telegram bots using the **grammY** framework (`v1.46.0` stable & `v2.0.0` next generation).
 
 ---
 
 ## 1. Freshness Protocol & Version Guardrails
 
 - **Current Stable Release:** `v1.46.0` (production default, npm: `grammy`, with Bot API 10.0–10.3 support).
-- **Upcoming Major Release:** `v2.0.0-beta.x` (JSR: `@grammyjs/grammy`, `v2.grammy.dev`). Introduces deprecation of `ctx.reply*` $\rightarrow$ `ctx.send*`, polymorphic `SendData`, and transformative context flavors. See [`v2-migration.md`](references/v2-migration.md).
+- **Major Update Portal (v2):** `http://v2.grammy.dev` (JSR: `@grammyjs/grammy`). Official documentation for grammY 2.0. Introduces method renaming (`ctx.reply*` $\rightarrow$ `ctx.send*`), polymorphic `SendData` payloads, and Transformative Context Flavors. See [`v2-migration.md`](references/v2-migration.md).
+- **Telegram Bot API Types Source:** [`https://github.com/grammyjs/types`](https://github.com/grammyjs/types) (npm/JSR: `@grammyjs/types`). Core TypeScript definitions for all Telegram Bot API updates, methods, objects, and keyboards.
 - **Core Principle:** Never write version-sensitive API calls or plugin configurations purely from memory. Consult the primary reference files in `grammy/references/` before implementing any feature.
 - **Reference Metadata:** See `grammy/references/_meta.json` for verified documentation sources.
 
@@ -22,7 +23,7 @@ This skill guides AI coding agents in designing, building, and deploying robust 
 
 ## 2. Lazy Senior Principles
 
-1. **Type-First Context Modeling:** Always declare custom context types using additive or transformative flavors (`type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor`). Pass `MyContext` to `Bot`, `Composer`, and `Menu` generic parameters.
+1. **Type-First Context Modeling:** Declare custom context types using additive flavors in v1 (`type MyContext = Context & SessionFlavor<SessionData>`) or transformative generic wrappers in v2 (`type MyContext = SessionFlavor<Context, SessionData>`). Pass `MyContext` to `Bot`, `Composer`, and `Menu` generic parameters.
 2. **Lean Modular Architecture:** Group related commands, keyboards, and listeners into modular composers (`src/features/` or `src/bot/features/`). Keep files lean—only create separate handlers, services, or keyboards when truly needed. Avoid premature over-engineering.
 3. **Guest Mode & Bot API 10.x Readiness:** Handle guest invocations across non-member chats via `bot.on("guest_message")` and answer promptly using `ctx.answerGuestQuery(result)` (supplying `ctx.msg.guest_query_id`). Configure `supports_guest_queries` in BotFather.
 4. **Strict Conversation Replay Discipline:** Inside `@grammyjs/conversations` builders:
@@ -106,10 +107,13 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 | [`deployment.md`](references/deployment.md) | Polling vs Webhooks, `@grammyjs/runner` concurrency, `sequentialize`, `webhookCallback`, supported framework adapters, secret tokens, webhook timeout rules |
 | [`hosting.md`](references/hosting.md) | VPS hosting (systemd, PM2, Caddy), Deno Deploy, Cloudflare Workers, Supabase Functions, Fly.io, Vercel |
 | [`v2-migration.md`](references/v2-migration.md) | grammY 2.0 breaking changes, `ctx.reply*` $\rightarrow$ `ctx.send*` renamings, `SendData` object, transformative flavors, JSR installation |
+| [`broadcast.md`](references/broadcast.md) | Queue-based broadcast state machine (`pending` $\rightarrow$ `running` $\rightarrow$ `paused`/`stopped`), KV storage interface for Cloudflare/Deno, chunked sending, auto-throttle on 429 errors, progress report formatting, `onUserRestricted` callback |
 
 ---
 
-## 5. Quick Starter Snippet
+## 5. Quick Starter Snippets
+
+### A. grammY 1.x (Current Production Default — npm: `grammy`)
 
 ```typescript
 import { Bot, Context, session, SessionFlavor, InlineKeyboard } from "grammy";
@@ -164,4 +168,41 @@ bot.catch((err) => {
 const runner = run(bot);
 process.once("SIGINT", () => runner.stop());
 process.once("SIGTERM", () => runner.stop());
+```
+
+### B. grammY 2.0 (Next Generation — JSR: `@grammyjs/grammy` & `v2.grammy.dev`)
+
+```typescript
+import { Bot, Context, InlineKeyboard } from "@grammyjs/grammy";
+import { session, SessionFlavor } from "@grammyjs/session";
+
+interface SessionData {
+  counter: number;
+}
+
+// 2.0 Transformative Context Flavor wrapper
+export type MyContext = SessionFlavor<Context, SessionData>;
+
+const bot = new Bot<MyContext>(process.env.BOT_TOKEN ?? "");
+
+bot.use(session({ initial: (): SessionData => ({ counter: 0 }) }));
+
+bot.command("start", async (ctx) => {
+  ctx.session.counter++;
+  // 2.0 ctx.send shortcut replaces ctx.reply
+  await ctx.send(`Welcome to grammY 2.0! Counter: ${ctx.session.counter}`, {
+    reply_markup: new InlineKeyboard().text("Click Me", "btn_click"),
+  });
+});
+
+bot.callbackQuery("btn_click", async (ctx) => {
+  await ctx.answerCallbackQuery({ text: "Button clicked!" });
+  await ctx.send("Action processed via ctx.send!");
+});
+
+bot.catch((err) => {
+  console.error(`Error in update ${err.ctx.update.update_id}:`, err.error);
+});
+
+bot.start();
 ```

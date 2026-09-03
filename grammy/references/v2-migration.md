@@ -1,8 +1,9 @@
 # grammY 2.0 Migration & Deprecation Guide
 
 > **Target Version:** grammY `v2.0.0-beta.x` (Next / JSR)  
-> **Stable Baseline:** grammY `v1.45.1`  
-> **Source:** `https://v2.grammy.dev`, `https://jsr.io/@grammyjs/grammy/doc`, `https://github.com/grammyjs/grammy/issues/675`
+> **Stable Baseline:** grammY `v1.46.0`  
+> **Documentation Portal:** `http://v2.grammy.dev`  
+> **Source:** `http://v2.grammy.dev`, `https://jsr.io/@grammyjs/grammy/doc`, `https://github.com/grammyjs/grammy`
 
 ---
 
