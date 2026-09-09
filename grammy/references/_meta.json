@@ -32,6 +32,7 @@
     "https://v2.grammy.dev",
     "https://jsr.io/@grammyjs/grammy/doc",
     "https://github.com/grammyjs/types",
-    "https://github.com/smaznet/grammy-broadcast"
+    "https://github.com/smaznet/grammy-broadcast",
+    "https://core.telegram.org/bots/webapps"
   ]
 }

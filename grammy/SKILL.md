@@ -97,6 +97,10 @@ my-bot/
 └── tsconfig.json
 ```
 
+### F. Telegram Mini App (TMA) Codebase Analysis & Auditing
+- **When to load:** When asked to analyze, audit, or improve an existing Telegram Mini App codebase built on grammY.
+- **Workflow:** Execute the 5-phase gated protocol in [`references/miniapp-codebase-analysis.md`](references/miniapp-codebase-analysis.md) (Discovery $\rightarrow$ Findskills Check $\rightarrow$ Checklist Audit $\rightarrow$ Prioritized Findings Report $\rightarrow$ Small Safe Diff Execution).
+
 ---
 
 ## 4. Reference Map
@@ -118,6 +122,7 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 | [`broadcast.md`](references/broadcast.md) | Queue-based broadcast state machine (`pending` $\rightarrow$ `running` $\rightarrow$ `paused`/`stopped`), KV storage interface for Cloudflare/Deno, chunked sending, auto-throttle on 429 errors, progress report formatting, `onUserRestricted` callback |
 | [`typescript-patterns.md`](references/typescript-patterns.md) | Strict TS conventions, dependency injection (DI) pattern, `Result<T, E>` error handling, dependency version pre-flight check (`npm view <pkg> version`) |
 | [`serverless-patterns.md`](references/serverless-patterns.md) | Workers/Deno Deploy runtime constraints, portable KV storage abstraction, cold start optimizations, Hono webhook integration patterns |
+| [`miniapp-codebase-analysis.md`](references/miniapp-codebase-analysis.md) | Telegram Mini App (TMA) agentic audit & improvement workflow, server-side `initData` HMAC validation, SDK lifecycle/buttons, serverless grammY alignment, prioritized findings reports |
 
 ---
 
