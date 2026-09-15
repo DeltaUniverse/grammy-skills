@@ -19,6 +19,7 @@ Compatible with all leading AI coding assistants:
 - **[`grammy/references/`](grammy/references/)**: 100% factual reference files derived directly from official documentation:
   - [`core.md`](grammy/references/core.md) — Bot class, context flavors, filter queries, message sending, and file uploads.
   - [`guest-messages.md`](grammy/references/guest-messages.md) — Telegram Bot API 10.0–10.3 Guest Bot Mode, `guest_message` updates, `ctx.answerGuestQuery()`, and `@BotFather` setup.
+  - [`ephemeral-messages.md`](grammy/references/ephemeral-messages.md) — Telegram Bot API 10.3 Ephemeral Messages in Groups, `EphemeralMessageParameters`, two-way invisible commands (`is_ephemeral`), private overlays (`replace_callback_query_message`), and Telegram Communities onboarding.
   - [`rich-messages.md`](grammy/references/rich-messages.md) — HTML formatting, Bot API 10.1–10.3 Rich Blocks (`InputRichMessage`), compact tables, `@grammyjs/format`, `@grammyjs/parse-mode`, ASCII monospace tables, AI streaming via `editMessageText`, and inline keyboards.
   - [`sessions.md`](grammy/references/sessions.md) — Built-in sessions, multi-sessions, storage adapters (SQLite, Redis, Supabase, Free), lazy sessions, and TTL enhancement.
   - [`conversations.md`](grammy/references/conversations.md) — Async multi-step dialogs, Replay Engine rules, determinism, and form builders.

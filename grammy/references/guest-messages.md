@@ -166,16 +166,22 @@ bot.on("guest_message:text", async (ctx) => {
 
 ---
 
-## 6. Bot API 10.1–10.3 Rich Message & Ephemeral Integrations
+## 6. Contrast: Guest Mode vs. Group Ephemeral Messages
 
-Telegram Bot API 10.1 – 10.3 introduced structured Rich Messages and Ephemeral messages that enhance both guest interactions and group responses:
+Telegram Bot API provides two distinct mechanisms for clutter-free group interactions:
 
-### 1. Bot API 10.3 Ephemeral Parameters
-Ephemeral messages are temporary messages visible only to the interacting user:
-- Controlled via `EphemeralMessageParameters`.
-- Can be modified via `ctx.api.editEphemeralMessageText()` and `ctx.api.deleteEphemeralMessage()`.
+1. **Guest Mode (`answerGuestQuery` - Bot API 10.0):**
+   - For bots that are **not members** of the group chat.
+   - User mentions `@MyBot query` in any chat.
+   - The bot responds via `ctx.answerGuestQuery()` without ever joining the chat.
+2. **Ephemeral Messages & Two-Way Invisible Commands (`EphemeralMessageParameters` - Bot API 10.3):**
+   - For bots that **are members/admins** in group chats, supergroups, or communities.
+   - Messages sent with `ephemeral_message_parameters: { receiver_user_id }` are **strictly visible only to that specific user and the bot**.
+   - Ephemeral commands configured with `is_ephemeral: true` keep the user's input command invisible to other group members.
+   - Supports in-place private overlays (`replace_callback_query_message: true`).
+   - For full documentation, types, and recipes, see **[`ephemeral-messages.md`](ephemeral-messages.md)**.
 
-### 2. Bot API 10.3 Compact Tables
+### Compact Tables in Guest & Ephemeral Messages
 In Bot API 10.3, rich message tables support `is_compact: true` for denser mobile rendering:
 ```typescript
 // ASCII fallback for standard messages or rich blocks

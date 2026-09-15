@@ -49,6 +49,10 @@ This skill guides AI coding agents in designing, building, and deploying robust 
 8. **Media Albums with Buttons Discipline:**
    - **Golden Rule:** Conventional `sendMediaGroup` in Telegram Bot API **strictly prohibits** inline keyboards / buttons (`reply_markup`).
    - When a user asks for a media album, gallery, or multi-media upload **with buttons**, ALWAYS use **Rich Messages** (`<tg-slideshow>` for swipeable carousels or `<tg-collage>` for grid collages) sent via `ctx.api.raw.sendRichMessage({ rich_message: { markdown | html, media: [...] } })` with embedded `<tg-button>` / `<tg-button-row>`.
+9. **Ephemeral Messages & Two-Way Privacy Discipline:**
+   - When sending private replies, confirmations, AI summaries, or sensitive menus inside groups or communities, never clutter the chat. Use `ephemeral_message_parameters: { receiver_user_id: ctx.from.id }`.
+   - For sensitive group commands, configure `is_ephemeral: true` in `bot.api.setMyCommands` so the user's invocation remains 100% invisible to other members.
+   - For private interactive views in groups, use `replace_callback_query_message: true` to create a private overlay for the clicking user without modifying the public message seen by others. Ephemeral edits must use `editEphemeralMessage*` methods, and deletions use `deleteEphemeralMessage`. See [`references/ephemeral-messages.md`](references/ephemeral-messages.md).
 
 ---
 
@@ -101,6 +105,13 @@ my-bot/
 - **When to load:** When asked to analyze, audit, or improve an existing Telegram Mini App codebase built on grammY.
 - **Workflow:** Execute the 5-phase gated protocol in [`references/miniapp-codebase-analysis.md`](references/miniapp-codebase-analysis.md) (Discovery $\rightarrow$ Findskills Check $\rightarrow$ Checklist Audit $\rightarrow$ Prioritized Findings Report $\rightarrow$ Small Safe Diff Execution).
 
+### G. Group Interactions: Public vs Ephemeral vs Guest Mode
+- **Guest Mode (`guest-messages.md`):** Use when the bot is **not added as a member** to the chat. Activated when a user mentions `@MyBot query`, answered via `ctx.answerGuestQuery()`.
+- **Public Group Messages (`core.md`):** Use for communal interactions (group games, shared polls, broadcast alerts, public announcements).
+- **Ephemeral Group Messages (`ephemeral-messages.md`):** Use when the bot **is a member/admin** in a group, supergroup, or community, but the message is personal (account balance, verification codes, individual errors, private summaries, onboarding). Uses `ephemeral_message_parameters: { receiver_user_id }`.
+- **Two-Way Invisible Commands (`is_ephemeral`):** Register commands with `is_ephemeral: true` when users need to invoke sensitive operations in public groups without exposing their command prompt to other members.
+- **Private Interactive Overlays (`replace_callback_query_message`):** When members tap inline buttons in a shared group message, render private ephemeral cards replacing the view for only that member.
+
 ---
 
 ## 4. Reference Map
@@ -111,6 +122,7 @@ Refer to the factual documentation in `grammy/references/` for detailed implemen
 | :--- | :--- |
 | [`core.md`](references/core.md) | `Bot` class options, `Context` shortcuts (`ctx.reply`, `ctx.replyWithPhoto`), context flavors, `Composer` branching, filter queries (`bot.on`), `InputFile`, `reply_parameters`, HTML formatting |
 | [`guest-messages.md`](references/guest-messages.md) | Bot API 10.0–10.3 Guest Bot Mode, `guest_message` updates, `ctx.answerGuestQuery()`, `guest_query_id`, `@BotFather` setup, non-member chat interactions |
+| [`ephemeral-messages.md`](references/ephemeral-messages.md) | Bot API 10.3 Ephemeral Messages in Groups, `EphemeralMessageParameters`, two-way invisible commands (`is_ephemeral`), private overlays (`replace_callback_query_message`), `editEphemeralMessageText`, `deleteEphemeralMessage`, Communities & welcome flows |
 | [`rich-messages.md`](references/rich-messages.md) | Rich Markdown & HTML Style, Bot API 10.1–10.3 Rich Messages (`InputRichMessage`), `<tg-slideshow>` / `<tg-collage>` media albums with embedded buttons (`<tg-button>`), local file uploads, compact tables, AI drafts (`sendRichMessageDraft`) & `<tg-thinking>` |
 | [`sessions.md`](references/sessions.md) | Built-in `session()`, `initial` factory, `SessionFlavor`, storage adapters (SQLite, Redis, Supabase, Free), multi-sessions, `lazySession`, `enhanceStorage` |
 | [`conversations.md`](references/conversations.md) | `@grammyjs/conversations`, replay engine mechanics, 3 golden rules, `conversation.wait()`, `waitFor`, `conversation.external()`, `conversation.form` |

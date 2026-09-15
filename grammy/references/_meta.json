@@ -33,6 +33,10 @@
     "https://jsr.io/@grammyjs/grammy/doc",
     "https://github.com/grammyjs/types",
     "https://github.com/smaznet/grammy-broadcast",
-    "https://core.telegram.org/bots/webapps"
+    "https://core.telegram.org/bots/webapps",
+    "https://telegram.org/blog/communities-editor-invisible-messages",
+    "https://core.telegram.org/bots/features#ephemeral-messages",
+    "https://core.telegram.org/bots/api#ephemeralmessageparameters",
+    "https://core.telegram.org/bots/api#deleteephemeralmessage"
   ]
 }

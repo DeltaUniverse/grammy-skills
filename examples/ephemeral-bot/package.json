@@ -1,0 +1,16 @@
+{
+  "name": "ephemeral-bot",
+  "version": "1.0.0",
+  "description": "Telegram Bot testing Ephemeral Messages, Invisible Commands, and Private Overlays with grammY v1.46.0 and Bot API 10.3",
+  "type": "module",
+  "main": "bot.mjs",
+  "scripts": {
+    "start": "node bot.mjs",
+    "test": "node test-simulation.mjs"
+  },
+  "dependencies": {
+    "grammy": "^1.46.0",
+    "@grammyjs/runner": "^2.0.3",
+    "dotenv": "^16.4.7"
+  }
+}
